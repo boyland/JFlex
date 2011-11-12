@@ -36,7 +36,7 @@ import JFlex.gui.MainFrame;
 public class Main {
   
   /** JFlex version */
-  final public static String version = "1.4.2"; //$NON-NLS-1$
+  final public static String version = "1.4.2 (+scala)"; //$NON-NLS-1$
 
   /**
    * Generates a scanner for the specified input file.
@@ -247,6 +247,12 @@ public class Main {
         continue;
       }
       
+      if ( argv[i].equals("--scala") || argv[i].equals("-scala") ) {
+        Options.lang = Language.SCALA;
+        Skeleton.readSystemSkeleton("skeleton-scala.default");
+        continue;
+      }
+      
       if ( argv[i].startsWith("-") ) { //$NON-NLS-1$
         Out.error(ErrorMessages.UNKNOWN_COMMANDLINE, argv[i]);
         printUsage();
@@ -274,6 +280,7 @@ public class Main {
     Out.println("Where <options> can be one or more of");
     Out.println("-d <directory>   write generated file to <directory>");
     Out.println("--skel <file>    use external skeleton <file>");
+    Out.println("--scala          generate scala, not Java");
     Out.println("--switch");
     Out.println("--table");
     Out.println("--pack           set default code generation method");

@@ -316,7 +316,7 @@ JavaCode = ({JavaRest}|{StringLiteral}|{CharLiteral}|{JavaComment})+
   "%unicode"|"%16bit"         { return symbol(UNICODE);  }
   "%caseless"|"%ignorecase"   { caseless = true; }
   "%implements"{WSP}+.*       { isImplementing = concExc(isImplementing, yytext().substring(12).trim());  }
-  "%extends"{WSP}+{QClassT}{WSP}* { isExtending = yytext().substring(9).trim(); }
+  "%extends"{WSP}+ .*	      { isExtending = yytext().substring(9).trim(); }
   "%public"                   { isPublic = true; }
   "%apiprivate"               { visibility = "private"; Skeleton.makePrivate(); }
   "%final"                    { isFinal = true; }

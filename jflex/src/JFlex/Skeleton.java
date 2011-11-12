@@ -43,7 +43,7 @@ import java.util.Vector;
 public class Skeleton {
   
   /** location of default skeleton */
-  static final private String DEFAULT_LOC = "JFlex/skeleton.default"; //$NON-NLS-1$
+  static final private String DEFAULT_LOC = "skeleton.default"; //$NON-NLS-1$
   
   /** expected number of sections in the skeleton file */
   static final private int size = 21;
@@ -192,6 +192,16 @@ public class Skeleton {
    * (Re)load the default skeleton. Looks in the current system class path.   
    */
   public static void readDefault() {
+    String systemSkeleton = DEFAULT_LOC;
+    readSystemSkeleton(systemSkeleton);
+  }
+
+
+  /**
+   * (Re)load a skeleton distributed with the system.  Looks in the current system class path.
+   * @param systemSkeleton name of skeleton file to read
+   */
+  public static void readSystemSkeleton(String systemSkeleton) {
     ClassLoader l = Skeleton.class.getClassLoader();
     URL url;
     
@@ -200,13 +210,15 @@ public class Skeleton {
      * Use system class loader in this case.
      */
     if (l != null) {
-      url = l.getResource(DEFAULT_LOC); 
+      url = l.getResource(systemSkeleton); 
     }
     else {
-      url = ClassLoader.getSystemResource(DEFAULT_LOC); 
+      url = ClassLoader.getSystemResource(systemSkeleton); 
     }
 
     if (url == null) {
+      System.err.println("Couldn't find system skeleton file " + systemSkeleton);
+      new GeneratorException().printStackTrace();
       Out.error(ErrorMessages.SKEL_IO_ERROR_DEFAULT);
       throw new GeneratorException();    
     }
@@ -215,6 +227,7 @@ public class Skeleton {
       InputStreamReader reader = new InputStreamReader(url.openStream());
       readSkel(new BufferedReader(reader)); 
     } catch (IOException e) {
+      e.printStackTrace();
       Out.error(ErrorMessages.SKEL_IO_ERROR_DEFAULT); 
       throw new GeneratorException();
     }

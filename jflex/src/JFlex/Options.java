@@ -63,6 +63,8 @@ public class Options {
   public static boolean dot;
   /** If true, you will be flooded with information (e.g. dfa tables).  */
   public static boolean dump;
+  /** Output language (currently Java or Scala) */
+  public static Language lang;
 
 	static { setDefaults();	}
 

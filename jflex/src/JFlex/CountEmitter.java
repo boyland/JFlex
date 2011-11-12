@@ -53,9 +53,9 @@ public class CountEmitter extends PackEmitter {
     println("\";");
     
     nl();
-    println("  private static int [] zzUnpack"+name+"() {");
-    println("    int [] result = new int["+numEntries+"];");
-    println("    int offset = 0;");
+    println("  "+Options.lang.method_header(false, false, false, true, Options.lang.array_type(Options.lang.int_type()), "zzUnpack"+name, "()",null)+" {");
+    println("    "+Options.lang.local(false, Options.lang.array_type(Options.lang.int_type()), "result", Options.lang.new_array(Options.lang.int_type(), ""+numEntries))+";");
+    println("    "+Options.lang.local(true, Options.lang.int_type(), "offset", "0")+";");
 
     for (int i = 0; i < chunks; i++) {
       println("    offset = zzUnpack"+name+"("+constName()+"_PACKED_"+i+", offset, result);");
@@ -65,23 +65,24 @@ public class CountEmitter extends PackEmitter {
     println("  }");
     nl();
 
-    println("  private static int zzUnpack"+name+"(String packed, int offset, int [] result) {");
-    println("    int i = 0;       /* index in packed string  */");
-    println("    int j = offset;  /* index in unpacked array */");
-    println("    int l = packed.length();");
+    println("  "+Options.lang.method_header(false, false, false, true, Options.lang.int_type(), "zzUnpack"+name, 
+        "("+Options.lang.formal(false, "String", "packed") + "," +
+        Options.lang.formal(false, Options.lang.int_type(), "offset")+","+
+        Options.lang.formal(false, Options.lang.array_type(Options.lang.int_type()), "result")+")",null)+" {");
+    println("    "+Options.lang.local(true, Options.lang.int_type(), "i", "0")+";       /* index in packed string  */");
+    println("    "+Options.lang.local(true, Options.lang.int_type(), "j", "offset")+";  /* index in unpacked array */");
+    println("    "+Options.lang.local(false, Options.lang.int_type(), "l", "packed.length()")+";");
     println("    while (i < l) {");
-    println("      int count = packed.charAt(i++);");
-    println("      int value = packed.charAt(i++);");
-    if (translate == 1) {
-      println("      value--;");
-    } 
-    else if (translate != 0) {
+    println("      "+Options.lang.local(true, Options.lang.int_type(), "count", "packed.charAt(i)")+"; i+= 1");
+    println("      "+Options.lang.local(true, Options.lang.int_type(), "value", "packed.charAt(i);")+" i+= 1");
+    if (translate != 0) {
       println("      value-= "+translate);
     }
-    println("      do result[j++] = value; while (--count > 0);");
+    println("      do { "+Options.lang.array_index("result", "j")+" = value; j+=1; count -= 1; } while (count > 0);");
     println("    }");
     println("    return j;");
     println("  }");
+    super.emitUnpack();
   }
 
   /**

@@ -78,7 +78,7 @@ final public class Emitter {
 
   public Emitter(File inputFile, LexParse parser, DFA dfa) throws IOException {
 
-    String name = getBaseName(parser.scanner.className) + ".java";
+    String name = getBaseName(parser.scanner.className) + "." + Options.lang.extension();
 
     File outputFile = normalize(name, inputFile);
 
@@ -100,7 +100,7 @@ final public class Emitter {
    * @return the
    */
   public static String getBaseName(String className) {
-    int gen = className.indexOf('<');
+    int gen = className.indexOf('<'); //XXX Needs to be generalized to work with Scala
     if (gen < 0) {
       return className;
     }
@@ -188,12 +188,18 @@ final public class Emitter {
     if (!hasGenLookAhead()) return;
     
     println("  /** For the backwards DFA of general lookahead statements */");
-    println("  private boolean [] zzFin = new boolean [ZZ_BUFFERSIZE+1];");
+    // println("  private boolean [] zzFin = new boolean [ZZ_BUFFERSIZE+1];");
+    println("  " + Options.lang.field(false, false, false, 
+        Options.lang.array_type(Options.lang.boolean_type()), 
+        "zzFin", Options.lang.new_array(Options.lang.boolean_type(),
+            "ZZ_BUFFERSIZE+1")));
     println();
   }
   
   private void emitScanError() {
-    print("  private void zzScanError(int errorCode)");
+    //print("  private void zzScanError(int errorCode)");
+    print("  " + Options.lang.method_header(false, false, true, false, Options.lang.void_type(), 
+        "zzScanError", "(" + Options.lang.formal(false, Options.lang.int_type(), "errorCode")+")", null));
     
     if (scanner.scanErrorException != null) 
       print(" throws "+scanner.scanErrorException);
@@ -209,7 +215,10 @@ final public class Emitter {
 
     skel.emitNext();
 
-    print("  "+visibility+" void yypushback(int number) ");     
+    // print("  "+visibility+" void yypushback(int number) "); 
+    print("  "+Options.lang.method_header(false, visibility.equals("public"), true, false, 
+          Options.lang.void_type(), "yypushback", 
+          "(" + Options.lang.formal(false, Options.lang.int_type(), "number") + ")", null));
     
     if (scanner.scanErrorException == null)
       println(" {");
@@ -219,6 +228,7 @@ final public class Emitter {
 
   private void emitMain() {
     if ( !(scanner.standalone || scanner.debugOption || scanner.cupDebug) ) return;
+    // XXX: Not ported to Scala
 
     if ( scanner.cupDebug ) {
       println("  /**");
@@ -362,17 +372,18 @@ final public class Emitter {
   }
   
   private void emitNextInput() {
-    println("          if (zzCurrentPosL < zzEndReadL)");
-    println("            zzInput = zzBufferL[zzCurrentPosL++];");
-    println("          else if (zzAtEOF) {");
+    println("          if (zzCurrentPosL < zzEndReadL) {");
+    println("            zzInput = " + Options.lang.array_index("zzBufferL","zzCurrentPosL")+";");
+    println("            zzCurrentPosL += 1;");
+    println("          } else if (zzAtEOF) {");
     println("            zzInput = YYEOF;");
-    println("            break zzForAction;");
+    println("            " + Options.lang.break_block("zzForAction")+";");
     println("          }");
     println("          else {");
     println("            // store back cached positions");
     println("            zzCurrentPos  = zzCurrentPosL;");
     println("            zzMarkedPos   = zzMarkedPosL;");
-    println("            boolean eof = zzRefill();");
+    println("            " + Options.lang.local(false, Options.lang.boolean_type(), "eof", "zzRefill()") + ";");
     println("            // get translated positions and possibly new buffer");
     println("            zzCurrentPosL  = zzCurrentPos;");
     println("            zzMarkedPosL   = zzMarkedPos;");
@@ -380,10 +391,11 @@ final public class Emitter {
     println("            zzEndReadL     = zzEndRead;");
     println("            if (eof) {");
     println("              zzInput = YYEOF;");
-    println("              break zzForAction;");  
+    println("              " + Options.lang.break_block("zzForAction")+";"); 
     println("            }");
     println("            else {");
-    println("              zzInput = zzBufferL[zzCurrentPosL++];");
+    println("              zzInput = " + Options.lang.array_index("zzBufferL","zzCurrentPosL")+";");
+    println("              zzCurrentPosL += 1;");
     println("            }");
     println("          }"); 
   }
@@ -423,17 +435,37 @@ final public class Emitter {
     print("class ");
     print(scanner.className);
     
+    if (Options.lang == Language.SCALA) {
+      print("(private var zzReader : java.io.Reader");
+      emitCtorArgs();
+      print(")");
+    }
+    
     if ( scanner.isExtending != null ) {
       print(" extends ");
       print(scanner.isExtending);
     }
 
     if ( scanner.isImplementing != null ) {
-      print(" implements ");
+      //XXX: Workaround bad way %extends is written:
+      if (Options.lang == Language.SCALA)
+        print(" extends ");
+      else
+        print(" implements ");
       print(scanner.isImplementing);
     }   
     
     println(" {");
+    
+    if (Options.lang == Language.SCALA) {
+      print("  def this(in : java.io.InputStream) = ");    
+
+      print("this(new java.io.InputStreamReader(in)");
+
+      emitCtorActuals();      
+      
+      println(");");
+    }
   }  
 
   /**
@@ -464,7 +496,8 @@ final public class Emitter {
       
       int num = scanner.states.getNumber(name).intValue();
 
-      println("  "+visibility+" static final int "+name+" = "+2*num+";");
+      // println("  "+visibility+" static final int "+name+" = "+2*num+";");
+      println("  "+Options.lang.field(visibility.equals("public"), true, false, Options.lang.int_type(), name, ""+(2*num)) + ";");
     }
 
     // can't quite get rid of the indirection, even for non-bol lex states: 
@@ -477,7 +510,9 @@ final public class Emitter {
     println("   *                  at the beginning of a line");
     println("   * l is of the form l = 2*k, k a non negative integer");
     println("   */");
-    println("  private static final int ZZ_LEXSTATE[] = { ");
+    //println("  private static final int ZZ_LEXSTATE[] = { ");
+    println("  " + Options.lang.field(false, true, false, Options.lang.array_type(Options.lang.int_type()), 
+                                      "ZZ_LEXSTATE", Options.lang.array_literal_start(Options.lang.int_type())));
   
     int i, j = 0;
     print("    ");
@@ -495,7 +530,7 @@ final public class Emitter {
     }
             
     println( dfa.entryState[i] );
-    println("  };");
+    println("  "+Options.lang.array_literal_stop()+";");
   }
 
   private void emitDynamicInit() {    
@@ -548,14 +583,21 @@ final public class Emitter {
     println("   * @param packed   the packed character translation table");
     println("   * @return         the unpacked character translation table");
     println("   */");
-    println("  private static char [] zzUnpackCMap(String packed) {");
-    println("    char [] map = new char[0x10000];");
-    println("    int i = 0;  /* index in packed string  */");
-    println("    int j = 0;  /* index in unpacked array */");
+    // println("  private static char [] zzUnpackCMap(String packed) {");
+    println("  " + Options.lang.method_header(false, false, true, true, 
+        Options.lang.array_type(Options.lang.char_type()), "zzUnpackCMap", 
+        "("+Options.lang.formal(false, "String", "packed") + ")", null) + "{");
+    // println("    char [] map = new char[0x10000];");
+    println("    " + Options.lang.local(false, Options.lang.array_type(Options.lang.char_type()), "map", 
+        Options.lang.new_array(Options.lang.char_type(), "0x10000")));
+    println("    "+Options.lang.local(true, Options.lang.int_type(), "i", "0")+";  /* index in packed string  */");
+    println("    "+Options.lang.local(true, Options.lang.int_type(), "j", "0")+";  /* index in unpacked array */");
     println("    while (i < "+2*intervals.length+") {");
-    println("      int  count = packed.charAt(i++);");
-    println("      char value = packed.charAt(i++);");
-    println("      do map[j++] = value; while (--count > 0);");
+    println("      "+Options.lang.local(true, Options.lang.int_type(), "count", "packed.charAt(i)")+"; i+= 1");
+    println("      "+Options.lang.local(true, Options.lang.char_type(), "value", "packed.charAt(i);")+" i+= 1");
+    //println("      int  count = packed.charAt(i); i+=1");
+    //println("      char value = packed.charAt(i); i+=1");
+    println("      do { "+Options.lang.array_index("map","j")+" = value; j+=1; count-=1; } while (count > 0);");
     println("    }");
     println("    return map;");
     println("  }");
@@ -569,7 +611,9 @@ final public class Emitter {
     println("  /** ");
     println("   * The transition table of the DFA");
     println("   */");
-    println("  private static final int ZZ_TRANS [] = {"); 
+    // println("  private static final int ZZ_TRANS [] = {"); 
+    println("  " + Options.lang.field(false, true, false, Options.lang.array_type(Options.lang.int_type()), 
+        "ZZ_TRANS", Options.lang.array_literal_start(Options.lang.int_type())));
 
     print("    ");
     for (i = 0; i < dfa.numStates; i++) {
@@ -592,7 +636,7 @@ final public class Emitter {
     }
 
     println();
-    println("  };");
+    println("  "+ Options.lang.array_literal_stop()+";");
   }
   
   private void emitCharMapArrayUnPacked() {
@@ -603,8 +647,10 @@ final public class Emitter {
     println("  /** ");
     println("   * Translates characters to character classes");
     println("   */");
-    println("  private static final char [] ZZ_CMAP = {");
-  
+    // println("  private static final char [] ZZ_CMAP = {");
+    println("  " + Options.lang.field(false, true, false, Options.lang.array_type(Options.lang.char_type()), 
+        "ZZ_CMAP", Options.lang.array_literal_start(Options.lang.char_type())));
+
     int n = 0;  // numbers of entries in current line    
     print("    ");
     
@@ -625,7 +671,7 @@ final public class Emitter {
     }
     
     println();
-    println("  };");
+    println("  "+ Options.lang.array_literal_stop()+";");
     println();
   }
 
@@ -645,7 +691,8 @@ final public class Emitter {
     println("  /** ");
     println("   * Translates characters to character classes");
     println("   */");
-    println("  private static final String ZZ_CMAP_PACKED = ");
+    // println("  private static final String ZZ_CMAP_PACKED = ");
+    println("  " + Options.lang.field(false, true, false, "String", "ZZ_CMAP_PACKED", ""));
   
     int n = 0;  // numbers of entries in current line    
     print("    \"");
@@ -684,7 +731,8 @@ final public class Emitter {
     println("  /** ");
     println("   * Translates characters to character classes");
     println("   */");
-    println("  private static final char [] ZZ_CMAP = zzUnpackCMap(ZZ_CMAP_PACKED);");
+    println("  " + Options.lang.field(false, true, false, Options.lang.array_type(Options.lang.char_type()), 
+        "ZZ_CMAP", "zzUnpackCMap(ZZ_CMAP_PACKED)") + ";");
     println();
   }
 
@@ -762,7 +810,8 @@ final public class Emitter {
   private void emitClassCode() {
     if ( scanner.eofCode != null ) {
       println("  /** denotes if the user-EOF-code has already been executed */");
-      println("  private boolean zzEOFDone;");
+      //println("  private boolean zzEOFDone;");
+      println("  "+Options.lang.field(false, false, true, Options.lang.boolean_type(), "zzEOFDone", "false"));
       println("");
     }
     
@@ -773,6 +822,7 @@ final public class Emitter {
   }
 
   private void emitConstructorDecl() {
+    if (Options.lang == Language.SCALA) return;
     emitConstructorDecl(true);
     
     if ((scanner.standalone || scanner.debugOption) && 
@@ -841,22 +891,25 @@ final public class Emitter {
 
     print("    this(new java.io.InputStreamReader(in)");
     if (printCtorArgs) {
-      for (int i=0; i < scanner.ctorArgs.size(); i++) {
-        print(", "+scanner.ctorArgs.elementAt(i));
-      }      
+      emitCtorActuals();      
     }
     println(");");
     
     println("  }");
   }
 
-  private void emitCtorArgs() {
-    for (int i = 0; i < scanner.ctorArgs.size(); i++) {
-      print(", "+scanner.ctorTypes.elementAt(i));
-      print(" "+scanner.ctorArgs.elementAt(i));
-    }    
+  private void emitCtorActuals() {
+    for (int i=0; i < scanner.ctorArgs.size(); i++) {
+      print(", "+scanner.ctorArgs.elementAt(i));
+    }
   }
 
+  private void emitCtorArgs() {
+    for (int i = 0; i < scanner.ctorArgs.size(); i++) {
+      print(", "+Options.lang.formal(false, scanner.ctorTypes.elementAt(i).toString(),scanner.ctorArgs.elementAt(i).toString()));
+    }    
+  }
+  
   private void emitDoEOF() {
     if ( scanner.eofCode == null ) return;
     
@@ -865,7 +918,8 @@ final public class Emitter {
     println("   * when the end of file is reached");
     println("   */");
     
-    print("  private void zzDoEOF()");
+    // print("  private void zzDoEOF()");
+    print("  " + Options.lang.method_header(false, false, false, false, Options.lang.void_type(), "zzDoEOF", "()", null));
     
     if ( scanner.eofThrow != null ) {
       print(" throws ");
@@ -884,52 +938,32 @@ final public class Emitter {
   }
 
   private void emitLexFunctHeader() {
-    
-    if (scanner.cupCompatible)  {
-      // force public, because we have to implement java_cup.runtime.Symbol
-      print("  public ");
-    }
-    else {
-      print("  "+visibility+" ");
-    }
-    
-    if ( scanner.tokenType == null ) {
-      if ( scanner.isInteger )
-        print( "int" );
-      else 
-      if ( scanner.isIntWrap )
-        print( "Integer" );
-      else
-        print( "Yytoken" );
-    }
-    else
-      print( scanner.tokenType );
-      
-    print(" ");
-    
-    print(scanner.functionName);
-      
-    print("() throws java.io.IOException");
+    boolean visible = scanner.cupCompatible || visibility.equals("public");
+    String rtype = scanner.tokenType == null ? (scanner.isInteger ? Options.lang.int_type() : scanner.isIntWrap ? "Integer" : "Yytoken") :
+      scanner.tokenType.toString();
+    String excs = "java.io.IOException";
+    boolean isOverriding = false; // (Options.lang == Language.SCALA);
     
     if ( scanner.lexThrow != null ) {
-      print(", ");
-      print(scanner.lexThrow);
+      excs = excs + ", " + scanner.lexThrow;
     }
 
     if ( scanner.scanErrorException != null ) {
-      print(", ");
-      print(scanner.scanErrorException);
+      excs = excs + ", " + scanner.scanErrorException;
     }
     
+    println("  " + Options.lang.method_header(isOverriding, visible, true, false, rtype, scanner.functionName, "()",excs));
     println(" {");
     
     skel.emitNext();
 
     if ( scanner.useRowMap ) {
-      println("    int [] zzTransL = ZZ_TRANS;");
-      println("    int [] zzRowMapL = ZZ_ROWMAP;");
-      println("    int [] zzAttrL = ZZ_ATTRIBUTE;");
-
+      //println("    int [] zzTransL = ZZ_TRANS;");
+      //println("    int [] zzRowMapL = ZZ_ROWMAP;");
+      //println("    int [] zzAttrL = ZZ_ATTRIBUTE;");
+      println("    " + Options.lang.local(false, Options.lang.array_type(Options.lang.int_type()), "zzTransL", "ZZ_TRANS")+";");
+      println("    " + Options.lang.local(false, Options.lang.array_type(Options.lang.int_type()), "zzRowMapL", "ZZ_ROWMAP")+";");
+      println("    " + Options.lang.local(false, Options.lang.array_type(Options.lang.int_type()), "zzAttrL", "ZZ_ATTRIBUTE")+";");
     }
 
     skel.emitNext();    
@@ -940,65 +974,67 @@ final public class Emitter {
     }
     
     if ( scanner.lineCount || scanner.columnCount ) {
-      println("      boolean zzR = false;");
-      println("      for (zzCurrentPosL = zzStartRead; zzCurrentPosL < zzMarkedPosL;");
-      println("                                                             zzCurrentPosL++) {");
-      println("        switch (zzBufferL[zzCurrentPosL]) {");
-      println("        case '\\u000B':"); 
-      println("        case '\\u000C':"); 
-      println("        case '\\u0085':");
-      println("        case '\\u2028':"); 
-      println("        case '\\u2029':"); 
+      println("      " + Options.lang.local(true, Options.lang.boolean_type(), "zzR", "false")+";");
+      println("      zzCurrentPosL = zzStartRead");
+      println("      while (zzCurrentPosL < zzMarkedPosL) {");
+      println("        "+ Options.lang.switch_header(Options.lang.array_index("zzBufferL","zzCurrentPosL")) + "{");
+      println("        "+Options.lang.start_case("'\\u000B'")); 
+      println("        "+Options.lang.add_case("'\\u000C'")); 
+      println("        "+Options.lang.add_case("'\\u0085'"));
+      println("        "+Options.lang.add_case("'\\u2028'")); 
+      println("        "+Options.lang.add_case("'\\u2029'") + Options.lang.start_case_body());
       if ( scanner.lineCount )
-        println("          yyline++;");
+        println("          yyline+=1;");
       if ( scanner.columnCount )
         println("          yycolumn = 0;");
       println("          zzR = false;");
-      println("          break;");      
-      println("        case '\\r':");
+      println("          "+Options.lang.end_case_body());      
+      println("        "+Options.lang.start_case("'\\r'" + Options.lang.start_case_body()));
       if ( scanner.lineCount )
-        println("          yyline++;");
+        println("          yyline+=1;");
       if ( scanner.columnCount )
         println("          yycolumn = 0;");
       println("          zzR = true;");
-      println("          break;");
-      println("        case '\\n':");
+      println("          "+Options.lang.end_case_body());
+      println("        "+Options.lang.start_case("'\\n'" + Options.lang.start_case_body()));
       println("          if (zzR)");
       println("            zzR = false;");
       println("          else {");
       if ( scanner.lineCount )
-        println("            yyline++;");
+        println("            yyline+=1;");
       if ( scanner.columnCount )
         println("            yycolumn = 0;");
       println("          }");
-      println("          break;");
-      println("        default:");
+      println("          "+Options.lang.end_case_body());
+      println("        "+Options.lang.gen_default()+ Options.lang.start_case_body());
       println("          zzR = false;");
       if ( scanner.columnCount ) 
-        println("          yycolumn++;");
+        println("          yycolumn+=1;");
+      println("          " + Options.lang.end_case_body());
       println("        }");
+      println("        zzCurrentPosL += 1;");
       println("      }");
       println();
 
       if ( scanner.lineCount ) {
         println("      if (zzR) {");
         println("        // peek one character ahead if it is \\n (if we have counted one line too much)");
-        println("        boolean zzPeek;");
+        println("        "+Options.lang.local(true, Options.lang.boolean_type(), "zzPeek", "false")+";");
         println("        if (zzMarkedPosL < zzEndReadL)");
-        println("          zzPeek = zzBufferL[zzMarkedPosL] == '\\n';");
+        println("          zzPeek = "+Options.lang.array_index("zzBufferL","zzMarkedPosL")+" == '\\n';");
         println("        else if (zzAtEOF)");
         println("          zzPeek = false;");
         println("        else {");
-        println("          boolean eof = zzRefill();");
+        println("          "+Options.lang.local(false, Options.lang.boolean_type(), "eof", "zzRefill()")+";");
         println("          zzEndReadL = zzEndRead;");
         println("          zzMarkedPosL = zzMarkedPos;");
         println("          zzBufferL = zzBuffer;");
         println("          if (eof) ");
         println("            zzPeek = false;");
         println("          else ");
-        println("            zzPeek = zzBufferL[zzMarkedPosL] == '\\n';");
+        println("            zzPeek = "+Options.lang.array_index("zzBufferL","zzMarkedPosL")+" == '\\n';");
         println("        }");
-        println("        if (zzPeek) yyline--;");
+        println("        if (zzPeek) yyline-= 1;");
         println("      }");
       }
     }
@@ -1008,34 +1044,35 @@ final public class Emitter {
       // if match was empty, last value of zzAtBOL can be used
       // zzStartRead is always >= 0
       println("      if (zzMarkedPosL > zzStartRead) {");
-      println("        switch (zzBufferL[zzMarkedPosL-1]) {");
-      println("        case '\\n':");
-      println("        case '\\u000B':"); 
-      println("        case '\\u000C':"); 
-      println("        case '\\u0085':");
-      println("        case '\\u2028':"); 
-      println("        case '\\u2029':"); 
+      println("        "+ Options.lang.switch_header(Options.lang.array_index("zzBufferL","zzMarkedPosL-1")));
+      println("        "+Options.lang.start_case("'\\n'")); 
+      println("        "+Options.lang.add_case("'\\u000B'")); 
+      println("        "+Options.lang.add_case("'\\u000C'")); 
+      println("        "+Options.lang.add_case("'\\u0085'"));
+      println("        "+Options.lang.add_case("'\\u2028'")); 
+      println("        "+Options.lang.add_case("'\\u2029'") + Options.lang.start_case_body());
       println("          zzAtBOL = true;");
-      println("          break;"); 
-      println("        case '\\r': "); 
+      println("          "+Options.lang.end_case_body()); 
+      println("        "+Options.lang.start_case("'\\r'")+Options.lang.start_case_body()); 
       println("          if (zzMarkedPosL < zzEndReadL)");
-      println("            zzAtBOL = zzBufferL[zzMarkedPosL] != '\\n';");
+      println("            zzAtBOL = "+Options.lang.array_index("zzBufferL","zzMarkedPosL")+" != '\\n';");
       println("          else if (zzAtEOF)");
       println("            zzAtBOL = false;");
       println("          else {");
-      println("            boolean eof = zzRefill();");
+      println("            "+Options.lang.local(false, Options.lang.boolean_type(), "eof", "zzRefill()")+";");
       println("            zzMarkedPosL = zzMarkedPos;");
       println("            zzEndReadL = zzEndRead;");
       println("            zzBufferL = zzBuffer;");
       println("            if (eof) ");
       println("              zzAtBOL = false;");
       println("            else ");
-      println("              zzAtBOL = zzBufferL[zzMarkedPosL] != '\\n';");
+      println("              zzAtBOL = "+Options.lang.array_index("zzBufferL","zzMarkedPosL")+" != '\\n';");
       println("          }");      
-      println("          break;"); 
-      println("        default:"); 
+      println("          "+Options.lang.end_case_body()); 
+      println("        "+Options.lang.gen_default()+Options.lang.start_case_body()); 
       println("          zzAtBOL = false;");
-      println("        }"); 
+      println("        "+Options.lang.end_case_body()); 
+      println("        }");
       println("      }"); 
     }
 
@@ -1043,13 +1080,13 @@ final public class Emitter {
     
     if (scanner.bolUsed) {
       println("      if (zzAtBOL)");
-      println("        zzState = ZZ_LEXSTATE[zzLexicalState+1];");
+      println("        zzState = "+Options.lang.array_index("ZZ_LEXSTATE","zzLexicalState+1")+";");
       println("      else");    
-      println("        zzState = ZZ_LEXSTATE[zzLexicalState];");
+      println("        zzState = "+Options.lang.array_index("ZZ_LEXSTATE","zzLexicalState")+";");
       println();
     }
     else {
-      println("      zzState = ZZ_LEXSTATE[zzLexicalState];");
+      println("      zzState = "+Options.lang.array_index("ZZ_LEXSTATE","zzLexicalState")+";");
       println();
     }
 
@@ -1058,18 +1095,21 @@ final public class Emitter {
 
   
   private void emitGetRowMapNext() {
-    println("          int zzNext = zzTransL[ zzRowMapL[zzState] + zzCMapL[zzInput] ];");
-    println("          if (zzNext == "+DFA.NO_TARGET+") break zzForAction;");
+    println("          "+Options.lang.local(false, Options.lang.int_type(), "zzNext", 
+        Options.lang.array_index("zzTransL",
+            Options.lang.array_index("zzRowMapL","zzState")+" + "+
+            Options.lang.array_index("zzCMapL","zzInput")))+";");
+    println("          if (zzNext == "+DFA.NO_TARGET+") "+Options.lang.break_block("zzForAction")+";");
     println("          zzState = zzNext;");
     println();
 
-    println("          int zzAttributes = zzAttrL[zzState];");
+    println("          "+Options.lang.local(false, Options.lang.int_type(), "zzAttributes", Options.lang.array_index("zzAttrL","zzState"))+";");
 
     println("          if ( (zzAttributes & "+FINAL+") == "+FINAL+" ) {");
 
     skel.emitNext();
     
-    println("            if ( (zzAttributes & "+NOLOOK+") == "+NOLOOK+" ) break zzForAction;");
+    println("            if ( (zzAttributes & "+NOLOOK+") == "+NOLOOK+" ) "+Options.lang.break_block("zzForAction")+";");
 
     skel.emitNext();    
   }  
@@ -1077,30 +1117,30 @@ final public class Emitter {
   private void emitTransitionTable() {
     transformTransitionTable();
     
-    println("          zzInput = zzCMapL[zzInput];");
+    println("          zzInput = "+Options.lang.array_index("zzCMapL","zzInput")+";");
     println();
 
-    println("          boolean zzIsFinal = false;");
-    println("          boolean zzNoLookAhead = false;");
+    println("          "+Options.lang.local(true, Options.lang.boolean_type(), "zzIsFinal", "false")+";");
+    println("          "+Options.lang.local(true, Options.lang.boolean_type(), "zzNoLookAhead","false")+";");
     println();
     
-    println("          zzForNext: { switch (zzState) {");
+    println("          "+Options.lang.start_label_block("zzForNext")+Options.lang.switch_header("zzState")+" {");
 
     for (int state = 0; state < dfa.numStates; state++)
       if (isTransition[state]) emitState(state);
 
-    println("            default:");
+    println("            "+Options.lang.gen_default()+Options.lang.start_case_body());
     println("              // if this is ever reached, there is a serious bug in JFlex");
     println("              zzScanError(ZZ_UNKNOWN_ERROR);");
-    println("              break;");
-    println("          } }");
+    println("              "+Options.lang.end_case_body());
+    println("          } " + Options.lang.end_label_block("zzForNext"));
     println();
     
     println("          if ( zzIsFinal ) {");
     
     skel.emitNext();
     
-    println("            if ( zzNoLookAhead ) break zzForAction;");
+    println("            if ( zzNoLookAhead ) "+Options.lang.break_block("zzForAction")+";");
 
     skel.emitNext();    
   }
@@ -1171,7 +1211,7 @@ final public class Emitter {
   }
 
   private void emitActions() {
-    println("      switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {");
+    println("      "+Options.lang.switch_header(Options.lang.conditional("zzAction < 0","zzAction",Options.lang.array_index("ZZ_ACTION","zzAction")))+" {");
 
     int i = actionTable.size()+1;  
     Enumeration actions = actionTable.keys();
@@ -1179,7 +1219,7 @@ final public class Emitter {
       Action action = (Action) actions.nextElement();
       int label = ((Integer) actionTable.get(action)).intValue();
 
-      println("        case "+label+": "); 
+      println("        "+Options.lang.start_case(""+label)+Options.lang.start_case_body()); 
       
       if (action.lookAhead() == Action.FIXED_BASE) {
         println("          // lookahead expression with fixed base length");
@@ -1194,22 +1234,29 @@ final public class Emitter {
       
       if (action.lookAhead() == Action.GENERAL_LOOK) {
         println("          // general lookahead, find correct zzMarkedPos");
-        println("          { int zzFState = "+dfa.entryState[action.getEntryState()]+";");
-        println("            int zzFPos = zzStartRead;");
-        println("            if (zzFin.length <= zzBufferL.length) { zzFin = new boolean[zzBufferL.length+1]; }");
-        println("            boolean zzFinL[] = zzFin;");
+        println("          { "+Options.lang.local(true, Options.lang.int_type(), "zzFState", ""+dfa.entryState[action.getEntryState()])+";");
+        println("            "+Options.lang.local(true, Options.lang.int_type(), "zzFPos", "zzStartRead")+";");
+        println("            if (zzFin.length <= zzBufferL.length) { zzFin = "+
+            Options.lang.new_array(Options.lang.boolean_type(), "zzBufferL.length+1")+"; }");
+        println("            "+Options.lang.local(false, Options.lang.array_type(Options.lang.boolean_type()), "zzFinL", "zzFin")+";");
         println("            while (zzFState != -1 && zzFPos < zzMarkedPos) {");
-        println("              if ((zzAttrL[zzFState] & 1) == 1) { zzFinL[zzFPos] = true; } ");
-        println("              zzInput = zzBufferL[zzFPos++];");
-        println("              zzFState = zzTransL[ zzRowMapL[zzFState] + zzCMapL[zzInput] ];");
+        println("              if (("+Options.lang.array_index("zzAttrL","zzFState")+" & 1) == 1) { "+Options.lang.array_index("zzFinL","zzFPos")+" = true; } ");
+        println("              zzInput = "+Options.lang.array_index("zzBufferL","zzFPos")+";");
+        println("              zzFPos += 1;");
+        println("              zzFState = "+Options.lang.array_index("zzTransL",
+            Options.lang.array_index("zzRowMapL","zzFState")+" + "+
+            Options.lang.array_index("zzCMapL","zzInput"))+";");
         println("            }");
-        println("            if (zzFState != -1 && (zzAttrL[zzFState] & 1) == 1) { zzFinL[zzFPos] = true; } ");
+        println("            if (zzFState != -1 && ("+Options.lang.array_index("zzAttrL","zzFState")+" & 1) == 1) { "+Options.lang.array_index("zzFinL","zzFPos")+" = true; } ");
         println();                
         println("            zzFState = "+dfa.entryState[action.getEntryState()+1]+";");
         println("            zzFPos = zzMarkedPos;");
-        println("            while (!zzFinL[zzFPos] || (zzAttrL[zzFState] & 1) != 1) {");
-        println("              zzInput = zzBufferL[--zzFPos];");
-        println("              zzFState = zzTransL[ zzRowMapL[zzFState] + zzCMapL[zzInput] ];");
+        println("            while (!"+Options.lang.array_index("zzFinL","zzFPos")+" || ("+Options.lang.array_index("zzAttrL","zzFState")+" & 1) != 1) {");
+        println("              zzFPos -= 1;");
+        println("              zzInput = "+Options.lang.array_index("zzBufferL","zzFPos")+";");
+        println("              zzFState = "+Options.lang.array_index("zzTransL",
+            Options.lang.array_index("zzRowMapL","zzFState")+" + "+
+            Options.lang.array_index("zzCMapL","zzInput"))+";");
         println("            };");
         println("            zzMarkedPos = zzFPos;");
         println("          }");
@@ -1222,14 +1269,15 @@ final public class Emitter {
         if ( scanner.columnCount )
           print("\"col: \"+(yycolumn+1)+\" \"+");
         println("\"match: --\"+yytext()+\"--\");");        
-        print("          System.out.println(\"action ["+action.priority+"] { ");
+        print("          System.out.println(\""+Options.lang.array_index("action",""+action.priority)+" { ");
         print(escapify(action.content));
         println(" }\");");
       }
       
       println("          { "+action.content);
       println("          }");
-      println("        case "+(i++)+": break;"); 
+      println("          " + Options.lang.end_case_body());
+      println("        "+Options.lang.start_case("" + (i++))+Options.lang.start_case_body()+Options.lang.end_case_body()); 
     }
   }
 
@@ -1240,7 +1288,7 @@ final public class Emitter {
       println("            zzDoEOF();");
       
     if ( eofActions.numActions() > 0 ) {
-      println("            switch (zzLexicalState) {");
+      println("            "+Options.lang.switch_header("zzLexicalState")+" {");
       
       Enumeration stateNames = scanner.states.names();
 
@@ -1257,7 +1305,7 @@ final public class Emitter {
         Action action = eofActions.getAction(num);
 
         if (action != null) {
-          println("            case "+name+": {");
+          println("            "+Options.lang.start_case(name)+Options.lang.start_case_body()+" {");
           if ( scanner.debugOption ) {
             print("              System.out.println(");
             if ( scanner.lineCount )
@@ -1271,11 +1319,12 @@ final public class Emitter {
           }
           println("              "+action.content);
           println("            }");
-          println("            case "+(++last)+": break;");
+          println("            " + Options.lang.end_case_body());
+          println("            "+Options.lang.start_case(""+(++last))+Options.lang.start_case_body()+Options.lang.end_case_body());
         }
       }
       
-      println("            default:");
+      println("            "+Options.lang.gen_default()+Options.lang.start_case_body());
     }
 
     Action defaultAction = eofActions.getDefault();
@@ -1289,7 +1338,7 @@ final public class Emitter {
         if ( scanner.columnCount )
           print("\"col: \"+(yycolumn+1)+\" \"+");
         println("\"match: <<EOF>>\");");        
-        print("                System.out.println(\"action ["+defaultAction.priority+"] { ");
+        print("                System.out.println(\""+Options.lang.array_index("action ",""+defaultAction.priority)+" { ");
         print(escapify(defaultAction.content));
         println(" }\");");
       }
@@ -1304,13 +1353,14 @@ final public class Emitter {
       println("            return null;");
 
     if (eofActions.numActions() > 0)
+      println("              " + Options.lang.end_case_body());
       println("            }");
   }
   
   private void emitState(int state) {
     
-    println("            case "+state+":");
-    println("              switch (zzInput) {");
+    println("            "+Options.lang.start_case(""+state)+Options.lang.start_case_body());
+    println("              "+Options.lang.switch_header("zzInput")+" {");
    
     int defaultTransition = getDefaultTransition(state);
     
@@ -1327,7 +1377,7 @@ final public class Emitter {
     
     emitDefaultTransition(state, defaultTransition);
     
-    println("              }");
+    println("              } " + Options.lang.end_case_body());
     println("");
   }
   
@@ -1340,17 +1390,13 @@ final public class Emitter {
     else 
       chars = noTarget[state].characters();
   
-    print("                case ");
-    print(chars.nextElement());
-    print(": ");
+    print("                "+Options.lang.start_case(""+chars.nextElement()));
     
     while ( chars.hasMoreElements() ) {
-      println();
-      print("                case ");
-      print(chars.nextElement());
-      print(": ");
+      print("                "+Options.lang.add_case(""+chars.nextElement()));
     } 
     
+    print("                  "+Options.lang.start_case_body());
     if ( nextState != DFA.NO_TARGET ) {
       if ( dfa.isFinal[nextState] )
         print("zzIsFinal = true; ");
@@ -1359,16 +1405,17 @@ final public class Emitter {
         print("zzNoLookAhead = true; ");
         
       if ( nextState == state ) 
-        println("break zzForNext;");
+        println(Options.lang.break_block("zzForNext")+";");
       else
-        println("zzState = "+nextState+"; break zzForNext;");
+        println("zzState = "+nextState+"; "+Options.lang.break_block("zzForNext")+";");
     }
     else
-      println("break zzForAction;");
+      println(Options.lang.break_block("zzForAction")+";");
+    println("                "+Options.lang.end_case_body());
   }
   
   private void emitDefaultTransition(int state, int nextState) {
-    print("                default: ");
+    print("                "+Options.lang.gen_default()+Options.lang.start_case_body());
     
     if ( nextState != DFA.NO_TARGET ) {
       if ( dfa.isFinal[nextState] )
@@ -1378,12 +1425,13 @@ final public class Emitter {
         print("zzNoLookAhead = true; ");
         
       if ( nextState == state ) 
-        println("break zzForNext;");
+        println(Options.lang.break_block("zzForNext")+";");
       else
-        println("zzState = "+nextState+"; break zzForNext;");
+        println("zzState = "+nextState+"; "+Options.lang.break_block("zzForNext")+";");
     }
     else
-      println( "break zzForAction;" );
+      println(Options.lang.break_block("zzForAction")+";");
+    println("                "+Options.lang.end_case_body());
   }
   
   private int getDefaultTransition(int state) {
@@ -1549,10 +1597,10 @@ final public class Emitter {
     
     skel.emitNext();
     
-    println("  private static final int ZZ_BUFFERSIZE = "+scanner.bufferSize+";");
+    println("  "+Options.lang.field(false, true, false, Options.lang.int_type(), "ZZ_BUFFERSIZE"," "+scanner.bufferSize)+";");
 
     if (scanner.debugOption) {
-      println("  private static final String ZZ_NL = System.getProperty(\"line.separator\");");
+      println("  "+Options.lang.field(false, true, false, "String", "ZZ_NL", "System.getProperty(\"line.separator\")")+";");
     }
 
     skel.emitNext();

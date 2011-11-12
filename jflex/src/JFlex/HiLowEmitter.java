@@ -49,9 +49,9 @@ public class HiLowEmitter extends PackEmitter {
     // close last string chunk:
     println("\";");
     nl();
-    println("  private static int [] zzUnpack"+name+"() {");
-    println("    int [] result = new int["+numEntries+"];");
-    println("    int offset = 0;");
+    println("  "+Options.lang.method_header(false, false, false, true, Options.lang.array_type(Options.lang.int_type()), "zzUnpack"+name, "()",null)+" {");
+    println("    "+Options.lang.local(false, Options.lang.array_type(Options.lang.int_type()), "result", Options.lang.new_array(Options.lang.int_type(), ""+numEntries))+";");
+    println("    "+Options.lang.local(true, Options.lang.int_type(), "offset", "0")+";");
 
     for (int i = 0; i < chunks; i++) {
       println("    offset = zzUnpack"+name+"("+constName()+"_PACKED_"+i+", offset, result);");
@@ -59,18 +59,22 @@ public class HiLowEmitter extends PackEmitter {
 
     println("    return result;");
     println("  }");
-
     nl();
-    println("  private static int zzUnpack"+name+"(String packed, int offset, int [] result) {");
-    println("    int i = 0;  /* index in packed string  */");
-    println("    int j = offset;  /* index in unpacked array */");
-    println("    int l = packed.length();");
+
+    println("  "+Options.lang.method_header(false, false, false, true, Options.lang.int_type(), "zzUnpack"+name, 
+        "("+Options.lang.formal(false, "String", "packed") +","+
+        Options.lang.formal(false, Options.lang.int_type(), "offset")+","+
+        Options.lang.formal(false, Options.lang.array_type(Options.lang.int_type()), "result")+")",null)+" {");
+    println("    "+Options.lang.local(true, Options.lang.int_type(), "i", "0")+";       /* index in packed string  */");
+    println("    "+Options.lang.local(true, Options.lang.int_type(), "j", "offset")+";  /* index in unpacked array */");
+    println("    "+Options.lang.local(false, Options.lang.int_type(), "l", "packed.length()")+";");
     println("    while (i < l) {");
-    println("      int high = packed.charAt(i++) << 16;");
-    println("      result[j++] = high | packed.charAt(i++);");
+    println("      "+Options.lang.local(false, Options.lang.int_type(), "high", "packed.charAt(i) << 16")+"; i+= 1");
+    println("      "+Options.lang.array_index("result", "j")+" = high | packed.charAt(i); i+= 1; j += 1;");
     println("    }");
     println("    return j;");
     println("  }");
+    super.emitUnpack();
   }
 
   /**

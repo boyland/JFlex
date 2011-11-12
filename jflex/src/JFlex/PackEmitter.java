@@ -59,7 +59,9 @@ public abstract class PackEmitter {
   // String constants are stored as UTF8 with 2 bytes length
   // field in class files. One Unicode char can be up to 3 
   // UTF8 bytes. 64K max and two chars safety. 
-  private static final int maxSize = 0xFFFF-6;
+  // NB: The Scala compiler (2.7.2) cannot handle very long sequences of
+  // string addition.
+  private static final int maxSize = 1024; // 0xFFFF-6;
   
   /** indent for string lines */
   private static final String indent = "    ";
@@ -95,12 +97,6 @@ public abstract class PackEmitter {
    * Emit declaration of decoded member and open first chunk.
    */  
   public void emitInit() {
-    out.append("  private static final int [] ");
-    out.append(constName());
-    out.append(" = zzUnpack");
-    out.append(name);
-    out.append("();");
-    nl();
     nextChunk();
   }
 
@@ -151,18 +147,18 @@ public abstract class PackEmitter {
   /**
    * Emit the unpacking code. 
    */
-  public abstract void emitUnpack();
+  public void emitUnpack() {
+    out.append("  "+Options.lang.field(false, true, false, Options.lang.array_type(Options.lang.int_type()), constName(), 
+        "zzUnpack"+name+"()")+";");
+    nl();    
+  }
 
   /**
    *  emit next chunk 
    */
   private void nextChunk() {
     nl();
-    out.append("  private static final String ");
-    out.append(constName());
-    out.append("_PACKED_");
-    out.append(chunks);
-    out.append(" =");
+    out.append("  "+Options.lang.field(false, true, false, "String", constName()+"_PACKED_"+chunks, ""));
     nl();
     out.append(indent);
     out.append("\"");
