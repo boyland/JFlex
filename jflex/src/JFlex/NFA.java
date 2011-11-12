@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * JFlex 1.4.2                                                             *
- * Copyright (C) 1998-2008  Gerwin Klein <lsf@jflex.de>                    *
+ * JFlex 1.4.3                                                             *
+ * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
  * This program is free software; you can redistribute it and/or modify    *
@@ -29,7 +29,7 @@ import java.io.*;
  * Contains algorithms RegExp -> NFA and NFA -> DFA.
  *
  * @author Gerwin Klein
- * @version JFlex 1.4.2, $Revision$, $Date$
+ * @version JFlex 1.4.3, $Revision$, $Date$
  */
 final public class NFA {
 
@@ -213,6 +213,10 @@ final public class NFA {
       RegExp2 r = (RegExp2) lookAhead;
       insertLookAheadChoices(baseEnd, a, r.r1);
       insertLookAheadChoices(baseEnd, a, r.r2);
+    }
+    else if (lookAhead.type == sym.MACROUSE) {
+      RegExp1 r = (RegExp1) lookAhead;
+      insertLookAheadChoices(baseEnd, a, macros.getDefinition((String) r.content));
     }
     else {
       int len = SemCheck.length(lookAhead);
