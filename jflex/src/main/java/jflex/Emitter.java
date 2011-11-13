@@ -1365,7 +1365,6 @@ final public class Emitter {
 
     if (eofActions.numActions() > 0)
       println("              " + Options.lang.end_case_body());
-      println("            }");
   }
   
   private void emitState(int state) {
