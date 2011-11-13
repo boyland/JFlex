@@ -43,9 +43,9 @@ JFLEX_HOME=${PRG}/..
 # --------------------------------------------------------------------
 
 export CLASSPATH
-CLASSPATH=$JFLEX_HOME/lib/JFlex.jar
+CLASSPATH=$JFLEX_HOME/target/classes:$JFLEX_HOME/lib/JFlex.jar
 
-$JAVA JFlex.Main $@
+$JAVA jflex.Main $@
 
 #for more memory:
 #$JAVA -Xmx128m JFlex.Main $@
