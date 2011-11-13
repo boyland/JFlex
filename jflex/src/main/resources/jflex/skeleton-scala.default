@@ -1,0 +1,324 @@
+
+  /** This character denotes the end of file */
+  val YYEOF : Int = -1;
+
+  /** initial size of the lookahead buffer */
+--- private static final int ZZ_BUFFERSIZE = ...;
+
+  /** lexical states */
+---  lexical states, charmap
+
+  /* error codes */
+  private val ZZ_UNKNOWN_ERROR : Int = 0;
+  private val ZZ_NO_MATCH : Int = 1;
+  private val ZZ_PUSHBACK_2BIG : Int = 2;
+
+  /* error messages for the codes above */
+  private val ZZ_ERROR_MSG: Array[String] = Array(
+    "Unkown internal scanner error",
+    "Error: could not match input",
+    "Error: pushback value was too large"
+  );
+
+--- isFinal list
+
+  /** the current state of the DFA */
+  private var zzState : Int = 0;
+
+  /** the current lexical state */
+  private var zzLexicalState : Int = YYINITIAL;
+
+  /** this buffer contains the current text to be matched and is
+      the source of the yytext() string */
+  private var zzBuffer : Array[Char] = new Array(ZZ_BUFFERSIZE);
+
+  /** the textposition at the last accepting state */
+  private var zzMarkedPos : Int = 0;
+
+  /** the current text position in the buffer */
+  private var zzCurrentPos : Int = 0;
+
+  /** startRead marks the beginning of the yytext() string in the buffer */
+  private var zzStartRead : Int = 0;
+
+  /** endRead marks the last character in the buffer, that has been read
+      from input */
+  private var zzEndRead : Int = 0;
+
+  /** number of newlines encountered up to the start of the matched text */
+  private var yyline : Int = 0;
+
+  /** the number of characters up to the start of the matched text */
+  private var yychar : Int = 0;
+
+  /**
+   * the number of characters from the last newline up to the start of the 
+   * matched text
+   */
+  private var yycolumn : Int = 0;
+
+  /** 
+   * zzAtBOL == true <=> the scanner is currently at the beginning of a line
+   */
+  private var zzAtBOL : Boolean = true;
+
+  /** zzAtEOF == true <=> the scanner is at the EOF */
+  private var zzAtEOF : Boolean = false;
+
+--- user class code
+
+  /**
+   * Creates a new scanner
+   * There is also a java.io.InputStream version of this constructor.
+   *
+   * @param   in  the java.io.Reader to read input from.
+   */
+--- constructor declaration
+
+
+  /**
+   * Refills the input buffer.
+   *
+   * @return      <code>false</code>, iff there was new input.
+   */
+  private def zzRefill() : Boolean = {
+
+    /* first: make room (if you can) */
+    if (zzStartRead > 0) {
+      System.arraycopy(zzBuffer, zzStartRead,
+                       zzBuffer, 0,
+                       zzEndRead-zzStartRead);
+
+      /* translate stored positions */
+      zzEndRead-= zzStartRead;
+      zzCurrentPos-= zzStartRead;
+      zzMarkedPos-= zzStartRead;
+      zzStartRead = 0;
+    }
+
+    /* is the buffer big enough? */
+    if (zzCurrentPos >= zzBuffer.length) {
+      /* if not: blow it up */
+      val newBuffer : Array[Char] = new Array(zzCurrentPos*2);
+      System.arraycopy(zzBuffer, 0, newBuffer, 0, zzBuffer.length);
+      zzBuffer = newBuffer;
+    }
+
+    /* finally: fill the buffer with new input */
+    val numRead : Int = zzReader.read(zzBuffer, zzEndRead,
+                                      zzBuffer.length-zzEndRead);
+
+    if (numRead > 0) {
+      zzEndRead+= numRead;
+      return false;
+    }
+    // unlikely but not impossible: read 0 characters, but not at end of stream    
+    if (numRead == 0) {
+      val c : Int = zzReader.read();
+      if (c == -1) {
+        return true;
+      } else {
+        zzBuffer(zzEndRead) = c toChar;
+	    zzEndRead += 1
+        return false;
+      }     
+    }
+
+	// numRead < 0
+    return true;
+  }
+
+    
+  /**
+   * Closes the input stream.
+   */
+  def yyclose() : Unit = {
+    zzAtEOF = true;            /* indicate end of file */
+    zzEndRead = zzStartRead;  /* invalidate buffer    */
+
+    if (zzReader != null)
+      zzReader.close();
+  }
+
+
+  /**
+   * Resets the scanner to read from a new input stream.
+   * Does not close the old reader.
+   *
+   * All internal variables are reset, the old input stream 
+   * <b>cannot</b> be reused (internal buffer is discarded and lost).
+   * Lexical state is set to <tt>ZZ_INITIAL</tt>.
+   *
+   * @param reader   the new input stream 
+   */
+  def yyreset(reader : java.io.Reader) : Unit = {
+    zzReader = reader;
+    zzAtBOL  = true;
+    zzAtEOF  = false;
+    zzEndRead = 0; zzStartRead = 0;
+    zzCurrentPos = 0; zzMarkedPos = 0;
+    yyline = 0; yychar = 0; yycolumn = 0;
+    zzLexicalState = YYINITIAL;
+  }
+
+
+  /**
+   * Returns the current lexical state.
+   */
+  def yystate() : Int = {
+    zzLexicalState;
+  }
+
+
+  /**
+   * Enters a new lexical state
+   *
+   * @param newState the new lexical state
+   */
+  def yybegin(newState : Int) : Unit = {
+    zzLexicalState = newState;
+  }
+
+
+  /**
+   * Returns the text matched by the current regular expression.
+   */
+  def yytext() : String = {
+    new String( zzBuffer, zzStartRead, zzMarkedPos-zzStartRead );
+  }
+
+
+  /**
+   * Returns the character at position <tt>pos</tt> from the 
+   * matched text. 
+   * 
+   * It is equivalent to yytext().charAt(pos), but faster
+   *
+   * @param pos the position of the character to fetch. 
+   *            A value from 0 to yylength()-1.
+   *
+   * @return the character at position pos
+   */
+  def yycharat(pos : Int) : Char = {
+    zzBuffer(zzStartRead+pos);
+  }
+
+
+  /**
+   * Returns the length of the matched text region.
+   */
+  def yylength() : Int = {
+    zzMarkedPos-zzStartRead;
+  }
+
+
+  /**
+   * Reports an error that occured while scanning.
+   *
+   * In a wellformed scanner (no or only correct usage of 
+   * yypushback(int) and a match-all fallback rule) this method 
+   * will only be called with things that "Can't Possibly Happen".
+   * If this method is called, something is seriously wrong
+   * (e.g. a JFlex bug producing a faulty scanner etc.).
+   *
+   * Usual syntax/scanner level error handling should be done
+   * in error fallback rules.
+   *
+   * @param   errorCode  the code of the errormessage to display
+   */
+--- zzScanError declaration
+    var message : String = null;
+    try {
+      message = ZZ_ERROR_MSG(errorCode);
+    } catch {
+      case e:ArrayIndexOutOfBoundsException =>
+	    message = ZZ_ERROR_MSG(ZZ_UNKNOWN_ERROR);
+    }
+
+--- throws clause
+  } 
+
+
+  /**
+   * Pushes the specified amount of characters back into the input stream.
+   *
+   * They will be read again by then next call of the scanning method
+   *
+   * @param number  the number of characters to be read again.
+   *                This number must not be greater than yylength()!
+   */
+--- yypushback decl (contains zzScanError exception)
+    if ( number > yylength() )
+      zzScanError(ZZ_PUSHBACK_2BIG);
+
+    zzMarkedPos -= number;
+  }
+
+  /** Nested class to simulate multi-level break */
+  private case class ZZbreak(name:String) extends Throwable;
+
+--- zzDoEOF
+  /**
+   * Resumes scanning until the next regular expression is matched,
+   * the end of input is encountered or an I/O-Error occurs.
+   *
+   * @return      the next token
+   * @exception   java.io.IOException  if any I/O-Error occurs
+   */
+--- yylex declaration
+    var zzInput : Int = 0;
+    var zzAction : Int = 0;
+
+    // cached fields:
+    var zzCurrentPosL : Int = 0;
+    var zzMarkedPosL : Int = 0;
+    var zzEndReadL : Int = zzEndRead;
+    var zzBufferL : Array[Char] = zzBuffer;
+    var zzCMapL : Array[Char] = ZZ_CMAP;
+
+--- local declarations
+
+    while (true) {
+      zzMarkedPosL = zzMarkedPos;
+
+--- start admin (line, char, col count)
+      zzAction = -1;
+
+      { val p : Int = zzMarkedPosL;
+        zzCurrentPosL = p; zzCurrentPos = p; zzStartRead = p;
+      }
+  
+--- start admin (lexstate etc)
+
+      /* zzForAction: */ try {
+        while (true) {
+    
+--- next input, line, col, char count, next transition, isFinal action
+            zzAction = zzState;
+            zzMarkedPosL = zzCurrentPosL;
+--- line count update
+          }
+
+        }
+      } catch { case ZZbreak("zzForAction") => () }
+
+      // store back cached position
+      zzMarkedPos = zzMarkedPosL;
+--- char count update
+
+--- actions
+        case _ =>
+          if (zzInput == YYEOF && zzStartRead == zzCurrentPos) {
+            zzAtEOF = true;
+--- eofvalue
+          } else {
+--- no match
+          }
+      }
+    }
+    throw new RuntimeException("NOT REACHED");
+  }
+
+--- main
+
+}

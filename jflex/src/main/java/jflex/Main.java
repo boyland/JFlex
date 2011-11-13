@@ -239,7 +239,7 @@ public class Main {
       
       if ( argv[i].equals("--scala") || argv[i].equals("-scala") ) {
         Options.lang = Language.SCALA;
-        Skeleton.readSystemSkeleton("skeleton-scala.default");
+        Skeleton.readSystemSkeleton("jflex/skeleton-scala.default");
         continue;
       }
       
