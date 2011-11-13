@@ -1091,8 +1091,8 @@ final public class Emitter {
 
     if (scanner.useRowMap) {
       println("      // set up zzAction for empty match case:");
-      // TODO: use +Options.lang.local for declaration
-      println("      int zzAttributes = zzAttrL[zzState];");
+      println("      " + Options.lang.local(true, Options.lang.int_type(), "zzAttributes", 
+					    Options.lang.array_index("zzAttrL", "zzState") +";"));
       println("      if ( (zzAttributes & 1) == 1 ) {");
       println("        zzAction = zzState;");
       println("      }");
@@ -1112,7 +1112,7 @@ final public class Emitter {
     println("          zzState = zzNext;");
     println();
 
-    println("          zzAttributes = zzAttrL[zzState];");
+    println("          zzAttributes = "+ Options.lang.array_index("zzAttrL", "zzState") + ";");
 
     println("          if ( (zzAttributes & "+FINAL+") == "+FINAL+" ) {");
 
