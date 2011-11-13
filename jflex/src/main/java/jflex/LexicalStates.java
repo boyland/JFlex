@@ -3,22 +3,11 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software; you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program; if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package JFlex;
+package jflex;
 
 import java.util.*;
 
@@ -32,10 +21,10 @@ import java.util.*;
 public class LexicalStates {
   
   /** maps state name to state number */
-  Hashtable states; 
+  Map<String, Integer> states;
 
   /** codes of inclusive states (subset of states) */
-  Vector inclusive;
+  List<Integer> inclusive;
 
   /** number of declared states */
   int numStates;
@@ -45,8 +34,8 @@ public class LexicalStates {
    * constructs a new lexical state symbol table
    */
   public LexicalStates() {
-    states = new Hashtable();
-    inclusive = new Vector();
+    states = new HashMap<String, Integer>();
+    inclusive = new ArrayList<Integer>();
   }
 
   
@@ -56,11 +45,11 @@ public class LexicalStates {
   public void insert(String name, boolean is_inclusive) {
     if ( states.containsKey(name) ) return;
 
-    Integer code = new Integer(numStates++);
+    Integer code = numStates++;
     states.put(name, code);
 
     if (is_inclusive) 
-      inclusive.addElement(code);
+      inclusive.add(code);
   }
 
 
@@ -69,7 +58,7 @@ public class LexicalStates {
    * <code>null</code> if no such state has been declared.
    */
   public Integer getNumber(String name) {
-    return (Integer) states.get(name);
+    return states.get(name);
   }
 
   
@@ -84,14 +73,14 @@ public class LexicalStates {
   /**
    * returns the names of all states
    */
-  public Enumeration names() {
-    return states.keys();
+  public Set<String> names() {
+    return states.keySet();
   }
 
   /**
    * returns the code of all inclusive states
    */
-  public Enumeration getInclusiveStates() {
-    return inclusive.elements();
+  public List<Integer> getInclusiveStates() {
+    return inclusive;
   }
 }

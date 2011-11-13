@@ -1,4 +1,4 @@
-package JFlex;
+package jflex;
 
 public class ScalaLanguage implements Language {
 

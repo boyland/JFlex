@@ -21,7 +21,7 @@
 /*
  * This code contibuted originally by John Boyland.
  */
-package JFlex;
+package jflex;
 
 /**
  * Implement the language support for Java
