@@ -38,10 +38,16 @@ public class PackEmitterTest extends TestCase {
   public void testInit() {
     p.emitInit();
     assertEquals(
-      "  private static final int [] ZZ_BLA = zzUnpackBla();" + Out.NL +
       Out.NL +
-      "  private static final String ZZ_BLA_PACKED_0 =" + Out.NL +
+      "  private static final String ZZ_BLA_PACKED_0 = " + Out.NL +
       "    \"", 
+      p.toString());
+  }
+
+  public void testUnpackCall() {
+    p.emitUnpackCall();
+    assertEquals(
+      "  private static final int [] ZZ_BLA = zzUnpackBla();" + Out.NL,
       p.toString());
   }
 

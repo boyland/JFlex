@@ -71,7 +71,7 @@ public class CountEmitter extends PackEmitter {
     println("    }");
     println("    return j;");
     println("  }");
-    super.emitUnpack();
+    emitUnpackCall();
   }
 
   /**

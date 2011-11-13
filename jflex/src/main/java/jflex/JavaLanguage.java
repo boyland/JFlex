@@ -75,7 +75,7 @@ public class JavaLanguage implements Language {
    * @see JFlex.Language#array_type(java.lang.String)
    */
   public String array_type(String ty) {
-    return ty + "[]";
+    return ty + " []";
   }
 
   /* (non-Javadoc)

@@ -63,7 +63,7 @@ public class HiLowEmitter extends PackEmitter {
     println("    }");
     println("    return j;");
     println("  }");
-    super.emitUnpack();
+    emitUnpackCall();
   }
 
   /**

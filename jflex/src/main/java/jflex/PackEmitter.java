@@ -136,9 +136,16 @@ public abstract class PackEmitter {
   /**
    * Emit the unpacking code. 
    */
-  public void emitUnpack() {
-    out.append("  "+Options.lang.field(false, true, false, Options.lang.array_type(Options.lang.int_type()), constName(), 
-        "zzUnpack"+name+"()")+";");
+  public abstract void emitUnpack();
+
+  /**
+   * Emit the call to the unpacking code
+   */
+  public void emitUnpackCall() {
+    out.append("  "+Options.lang.field(false, true, false,
+				       Options.lang.array_type(Options.lang.int_type()),
+				       constName(), 
+				       "zzUnpack"+name+"()")+";");
     nl();    
   }
 
