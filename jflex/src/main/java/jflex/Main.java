@@ -3,26 +3,16 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software; you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program; if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package JFlex;
+package jflex;
  
 import java.io.*;
 import java.util.*;
-import JFlex.gui.MainFrame;
+
+import jflex.gui.MainFrame;
 
 
 /**
@@ -36,7 +26,7 @@ import JFlex.gui.MainFrame;
 public class Main {
   
   /** JFlex version */
-  final public static String version = "1.4.3 (+scala)"; //$NON-NLS-1$
+  final public static String version = "1.5.0-SNAPSHOT (+scala)"; //$NON-NLS-1$
 
   /**
    * Generates a scanner for the specified input file.
@@ -88,7 +78,7 @@ public class Main {
       Out.time(ErrorMessages.DFA_TOOK, time); 
 
       dfa.checkActions(scanner, parser);
-      
+
       nfa = null;
 
       if (Options.dump) Out.dump(ErrorMessages.get(ErrorMessages.DFA_IS)+
@@ -151,8 +141,8 @@ public class Main {
 
   }
 
-  public static Vector parseOptions(String argv[]) throws SilentExit {
-    Vector files = new Vector();
+  public static List<File> parseOptions(String argv[]) throws SilentExit {
+    List<File> files = new ArrayList<File>();
 
     for (int i = 0; i < argv.length; i++) {
 
@@ -262,7 +252,7 @@ public class Main {
       // if argv[i] is not an option, try to read it as file 
       File f = new File(argv[i]);
       if ( f.isFile() && f.canRead() ) 
-        files.addElement(f);      
+        files.add(f);      
       else {
         Out.error("Sorry, couldn't open \""+f+"\""); //$NON-NLS-2$
         throw new GeneratorException();
@@ -305,11 +295,11 @@ public class Main {
 
 
   public static void generate(String argv[]) throws SilentExit {
-    Vector files = parseOptions(argv);
+    List<File> files = parseOptions(argv);
 
     if (files.size() > 0) {
-      for (int i = 0; i < files.size(); i++) 
-        generate((File) files.elementAt(i));          
+      for (File file : files) 
+        generate(file);
     }
     else {
       new MainFrame();

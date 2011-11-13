@@ -3,24 +3,14 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software; you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program; if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package JFlex;
+package jflex;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Stores a regular expression of rules section in a JFlex-specification.
@@ -44,7 +34,7 @@ public class RegExp {
    *
    * @param type   a value from the cup generated class sym.
    *
-   * @see JFlex.sym
+   * @see jflex.sym
    */
   public RegExp(int type) {
     this.type = type;    
@@ -261,8 +251,8 @@ public class RegExp {
    */
   public RegExp anyChar() {
     // FIXME: there is some code duplication here with the parser
-    Vector list = new Vector();
-    list.addElement(new Interval((char)0,CharClasses.maxChar));    
+    List<Interval> list = new ArrayList<Interval>();
+    list.add(new Interval((char)0,CharClasses.maxChar));    
     return new RegExp1(sym.CCLASS,list);
   }
 

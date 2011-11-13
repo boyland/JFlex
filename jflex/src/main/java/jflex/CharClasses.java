@@ -3,25 +3,14 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software; you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program; if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package JFlex;
+package jflex;
 
-import java.util.*;
-
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  *
@@ -37,10 +26,12 @@ public class CharClasses {
   public static final char maxChar = '\uFFFF';
 
   /** the char classes */
-  private Vector /* of IntCharSet */ classes;
+  private List<IntCharSet> classes;
 
   /** the largest character actually used in a specification */
   private char maxCharUsed;
+  
+  private LexScan scanner;
 
   /**
    * Constructs a new CharClass object that provides space for 
@@ -52,15 +43,17 @@ public class CharClasses {
    *                    considered. (127 for 7bit Lexers, 
    *                    255 for 8bit Lexers and 0xFFFF
    *                    for Unicode Lexers).
+   * @param scanner     the scanner containing the UnicodeProperties instance
+   *                    from which caseless partitions are obtained.
    */
-  public CharClasses(int maxCharCode) {
+  public CharClasses(int maxCharCode, LexScan scanner) {
     if (maxCharCode < 0 || maxCharCode > 0xFFFF) 
       throw new IllegalArgumentException();
 
     maxCharUsed = (char) maxCharCode;
-
-    classes = new Vector();
-    classes.addElement(new IntCharSet(new Interval((char) 0, maxChar)));
+    this.scanner = scanner;
+    classes = new ArrayList<IntCharSet>();
+    classes.add(new IntCharSet(new Interval((char) 0, maxChar)));
   }
 
 
@@ -106,8 +99,8 @@ public class CharClasses {
    * @param caseless  if true upper/lower/title case are considered equivalent  
    */
   public void makeClass(IntCharSet set, boolean caseless) {
-    if (caseless) set = set.getCaseless();
-    
+    if (caseless) set = set.getCaseless(scanner.getUnicodeProperties());
+
     if ( DEBUG ) {
       Out.dump("makeClass("+set+")");
       dump();
@@ -115,7 +108,7 @@ public class CharClasses {
 
     int oldSize = classes.size();
     for (int i = 0; i < oldSize; i++) {
-      IntCharSet x  = (IntCharSet) classes.elementAt(i);
+      IntCharSet x  = classes.get(i);
 
       if (x.equals(set)) return;
 
@@ -128,7 +121,7 @@ public class CharClasses {
         }
         else if ( set.equals(and) ) {
           x.sub(and);
-          classes.addElement(and);
+          classes.add(and);
           if (DEBUG) {
             Out.dump("makeClass(..) finished");
             dump();
@@ -138,7 +131,7 @@ public class CharClasses {
 
         set.sub(and);
         x.sub(and);
-        classes.addElement(and);
+        classes.add(and);
       }
     }
     
@@ -155,7 +148,7 @@ public class CharClasses {
   public int getClassCode(char letter) {
     int i = -1;
     while (true) {
-      IntCharSet x = (IntCharSet) classes.elementAt(++i);
+      IntCharSet x = classes.get(++i);
       if ( x.contains(letter) ) return i;      
     }
   }
@@ -174,7 +167,7 @@ public class CharClasses {
    * @param theClass  the index of the class to
    */
   public String toString(int theClass) {
-    return classes.elementAt(theClass).toString();
+    return classes.get(theClass).toString();
   }
 
 
@@ -185,12 +178,12 @@ public class CharClasses {
    * Enumerates the classes by index.
    */
   public String toString() {
-    StringBuffer result = new StringBuffer("CharClasses:");
+    StringBuilder result = new StringBuilder("CharClasses:");
 
     result.append(Out.NL);
 
-    for (int i = 0; i < classes.size(); i++) 
-      result.append("class "+i+":"+Out.NL+classes.elementAt(i)+Out.NL);    
+    for (int i = 0; i < classes.size(); i++)
+      result.append("class ").append(i).append(":").append(Out.NL).append(classes.get(i)).append(Out.NL);    
     
     return result.toString();
   }
@@ -220,17 +213,17 @@ public class CharClasses {
    * Updates the current partition, so that the specified set of characters
    * gets a new character class.
    *
-   * Characters that are elements of the set <code>v</code> are not in the same
-   * equivalence class with characters that are not elements of the set <code>v</code>.
+   * Characters that are elements of the set <code>l</code> are not in the same
+   * equivalence class with characters that are not elements of the set <code>l</code>.
    *
-   * @param v   a Vector of Interval objects. 
-   *            This Vector represents a set of characters. The set of characters is
-   *            the union of all intervals in the Vector.
+   * @param l   a List of Interval objects. 
+   *            This List represents a set of characters. The set of characters is
+   *            the union of all intervals in the List.
    *    
    * @param caseless  if true upper/lower/title case are considered equivalent  
    */
-  public void makeClass(Vector /* Interval */ v, boolean caseless) {
-    makeClass(new IntCharSet(v), caseless);
+  public void makeClass(List<Interval> l, boolean caseless) {
+    makeClass(new IntCharSet(l), caseless);
   }
   
 
@@ -243,14 +236,14 @@ public class CharClasses {
    *
    * This method is equivalent to <code>makeClass(v)</code>
    * 
-   * @param v   a Vector of Interval objects. 
-   *            This Vector represents a set of characters. The set of characters is
-   *            the union of all intervals in the Vector.
+   * @param l   a List of Interval objects. 
+   *            This List represents a set of characters. The set of characters is
+   *            the union of all intervals in the List.
    * 
    * @param caseless  if true upper/lower/title case are considered equivalent  
    */
-  public void makeClassNot(Vector v, boolean caseless) {
-    makeClass(new IntCharSet(v), caseless);
+  public void makeClassNot(List<Interval> l, boolean caseless) {
+    makeClass(new IntCharSet(l), caseless);
   }
 
 
@@ -273,7 +266,7 @@ public class CharClasses {
     int length  = 0;
 
     for (int i = 0; i < size; i++) {
-      IntCharSet x = (IntCharSet) classes.elementAt(i);
+      IntCharSet x = classes.get(i);
       if ( negate ) {
         if ( !set.and(x).containsElements() ) {
           temp[length++] = i;
@@ -299,13 +292,13 @@ public class CharClasses {
    * Returns an array that contains the character class codes of all characters
    * in the specified set of input characters.
    * 
-   * @param intervallVec   a Vector of Intervals, the set of characters to get
+   * @param intervalList  a List of Intervals, the set of characters to get
    *                       the class codes for
    *
-   * @return an array with the class codes for intervallVec
+   * @return an array with the class codes for intervalList
    */
-  public int [] getClassCodes(Vector /* Interval */ intervallVec) {
-    return getClassCodes(new IntCharSet(intervallVec), false);
+  public int [] getClassCodes(List<Interval> intervalList) {
+    return getClassCodes(new IntCharSet(intervalList), false);
   }
 
 
@@ -313,13 +306,13 @@ public class CharClasses {
    * Returns an array that contains the character class codes of all characters
    * that are <strong>not</strong> in the specified set of input characters.
    * 
-   * @param intervallVec   a Vector of Intervals, the complement of the
+   * @param intervalList  a List of Intervals, the complement of the
    *                       set of characters to get the class codes for
    *
-   * @return an array with the class codes for the complement of intervallVec
+   * @return an array with the class codes for the complement of intervalList
    */
-  public int [] getNotClassCodes(Vector /* Interval */ intervallVec) {
-    return getClassCodes(new IntCharSet(intervallVec), true);
+  public int [] getNotClassCodes(List<Interval> intervalList) {
+    return getClassCodes(new IntCharSet(intervalList), true);
   }
 
 
@@ -332,8 +325,8 @@ public class CharClasses {
   public void check() {
     for (int i = 0; i < classes.size(); i++)
       for (int j = i+1; j < classes.size(); j++) {
-        IntCharSet x = (IntCharSet) classes.elementAt(i);
-        IntCharSet y = (IntCharSet) classes.elementAt(j);
+        IntCharSet x = classes.get(i);
+        IntCharSet y = classes.get(j);
         if ( x.and(y).containsElements() ) {
           System.out.println("Error: non disjoint char classes "+i+" and "+j);
           System.out.println("class "+i+": "+x);
@@ -353,7 +346,7 @@ public class CharClasses {
 
 
   /**
-   * Returns an array of all CharClassIntervalls in this
+   * Returns an array of all CharClassIntervals in this
    * char class collection. 
    *
    * The array is ordered by char code, i.e.
@@ -365,18 +358,18 @@ public class CharClasses {
   public CharClassInterval [] getIntervals() {
     int i, c;
     int size = classes.size();
-    int numIntervalls = 0;   
+    int numIntervals = 0;   
 
     for (i = 0; i < size; i++) 
-      numIntervalls+= ((IntCharSet) classes.elementAt(i)).numIntervalls();    
+      numIntervals+= (classes.get(i)).numIntervals();    
 
-    CharClassInterval [] result = new CharClassInterval[numIntervalls];
+    CharClassInterval [] result = new CharClassInterval[numIntervals];
     
     i = 0; 
     c = 0;
-    while (i < numIntervalls) {
+    while (i < numIntervals) {
       int       code = getClassCode((char) c);
-      IntCharSet set = (IntCharSet) classes.elementAt(code);
+      IntCharSet set = classes.get(code);
       Interval  iv  = set.getNext();
       
       result[i++]    = new CharClassInterval(iv.start, iv.end, code);

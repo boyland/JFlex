@@ -3,41 +3,30 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software; you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program; if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package JFlex;
+package jflex;
 
 
 /**
- * An intervall of characters with basic operations.
+ * An interval of characters with basic operations.
  *
  * @author Gerwin Klein
  * @version JFlex 1.5, $Revision$, $Date$
  */
 public final class Interval {
 
-  /* start and end of the intervall */
+  /* start and end of the interval */
   public char start, end;
   
 
   /**
-   * Constuct a new intervall from <code>start</code> to <code>end</code>.
+   * Constuct a new interval from <code>start</code> to <code>end</code>.
    *
-   * @param start  first character the intervall should contain
-   * @param end    last  character the intervall should contain
+   * @param start  first character the interval should contain
+   * @param end    last  character the interval should contain
    */
   public Interval(char start, char end) {
     this.start = start;
@@ -55,7 +44,7 @@ public final class Interval {
 
 
   /**
-   * Return <code>true</code> iff <code>point</code> is contained in this intervall.
+   * Return <code>true</code> iff <code>point</code> is contained in this interval.
    *
    * @param point  the character to check
    */
@@ -65,10 +54,10 @@ public final class Interval {
 
 
   /**
-   * Return <code>true</code> iff this intervall completely contains the 
+   * Return <code>true</code> iff this interval completely contains the 
    * other one.
    *
-   * @param other    the other intervall 
+   * @param other    the other interval 
    */
   public boolean contains(Interval other) {
     return this.start <= other.start && this.end >= other.end;
@@ -76,7 +65,7 @@ public final class Interval {
   
 
   /**
-   * Return <code>true</code> if <code>o</code> is an intervall
+   * Return <code>true</code> if <code>o</code> is an interval
    * with the same borders.
    *
    * @param o  the object to check equality with
@@ -93,7 +82,7 @@ public final class Interval {
   /**
    * Set a new last character
    *
-   * @param end  the new last character of this intervall
+   * @param end  the new last character of this interval
    */
   public void setEnd(char end) {
     this.end = end;
@@ -103,7 +92,7 @@ public final class Interval {
   /** 
    * Set a new first character
    *
-   * @param start the new first character of this intervall
+   * @param start the new first character of this interval
    */ 
   public void setStart(char start) {
     this.start = start;
@@ -122,19 +111,19 @@ public final class Interval {
 
 
   /**
-   * Get a String representation of this intervall.
+   * Get a String representation of this interval.
    *
    * @return a string <code>"[start-end]"</code> or
    *         <code>"[start]"</code> (if there is only one character in
-   *         the intervall) where <code>start</code> and
+   *         the interval) where <code>start</code> and
    *         <code>end</code> are either a number (the character code)
    *         or something of the from <code>'a'</code>.  
    */
   public String toString() {
-    StringBuffer result = new StringBuffer("[");
+    StringBuilder result = new StringBuilder("[");
 
     if ( isPrintable(start) )
-      result.append("'"+start+"'");
+      result.append("'").append(start).append("'");
     else
       result.append( (int) start );
 
@@ -142,7 +131,7 @@ public final class Interval {
       result.append("-");
 
       if ( isPrintable(end) )
-        result.append("'"+end+"'");
+        result.append("'").append(end).append("'");
       else
         result.append( (int) end );
     }

@@ -3,21 +3,10 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software; you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program; if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-package JFlex;
+package jflex;
 
 /**
  * A set of NFA states (= integers). 
@@ -269,9 +258,9 @@ final public class StateSet {
 
 
   public boolean containsElements() {
-    for (int i = 0; i < bits.length; i++)
-      if (bits[i] != 0) return true;
-      
+    for (long bit : bits) 
+      if (bit != 0) return true;
+
     return false;
   }
 
@@ -318,13 +307,13 @@ final public class StateSet {
   public String toString() {
     StateSetEnumerator set = states();
 
-    StringBuffer result = new StringBuffer("{"); //$NON-NLS-1$
+    StringBuilder result = new StringBuilder("{"); //$NON-NLS-1$
 
     if ( set.hasMoreElements() ) result.append(""+set.nextElement()); //$NON-NLS-1$
 
     while ( set.hasMoreElements() ) {
       int i = set.nextElement();
-      result.append( ", "+i); //$NON-NLS-1$
+      result.append(", ").append(i); //$NON-NLS-1$
     }
 
     result.append("}"); //$NON-NLS-1$

@@ -3,22 +3,11 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software; you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program; if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package JFlex;
+package jflex;
 
 import java.util.*;
 
@@ -35,18 +24,18 @@ import java.util.*;
 final public class Macros {
 
   /** Maps names of macros to their definition */
-  private Hashtable macros;
+  private Map<String, RegExp> macros;
 
   /** Maps names of macros to their "used" flag */
-  private Hashtable used;
+  private Map<String, Boolean> used;
 
 
   /**
    * Creates a new macro expander.
    */
   public Macros() {
-    macros = new Hashtable();
-    used = new Hashtable();
+    macros = new HashMap<String, RegExp>();
+    used = new HashMap<String, Boolean>();
   }
 
 
@@ -87,27 +76,25 @@ final public class Macros {
    *         a regular expression.
    */
   public boolean isUsed(String name) {
-    return ((Boolean)used.get(name)).booleanValue();
+    return used.get(name);
   }
 
 
   /**
    * Returns all unused macros.
    *
-   * @return the enumeration of macro names that have not been used.
+   * @return the macro names that have not been used.
    */
-  public Enumeration unused() {
+  public List<String> unused() {
     
-    Vector unUsed = new Vector();
+    List<String> unUsed = new ArrayList<String>();
 
-    Enumeration names = used.keys();
-    while ( names.hasMoreElements() ) {
-      String name = (String) names.nextElement();
-      Boolean isUsed = (Boolean) used.get( name );
-      if ( !isUsed.booleanValue() ) unUsed.addElement(name);
+    for (String name : used.keySet()) {
+      Boolean isUsed = used.get( name );
+      if ( !isUsed) unUsed.add(name);
     }
     
-    return unUsed.elements();
+    return unUsed;
   }
 
 
@@ -123,10 +110,10 @@ final public class Macros {
    * @return the definition of the macro, <code>null</code> if 
    *         no macro with the specified name has been stored.
    *
-   * @see JFlex.Macros#expand
+   * @see jflex.Macros#expand
    */
   public RegExp getDefinition(String name) {
-    return (RegExp) macros.get(name);
+    return macros.get(name);
   }
 
 
@@ -137,18 +124,11 @@ final public class Macros {
    * @throws MacroException   if there is a cycle in the macro usage graph.
    */
    public void expand() throws MacroException {
-    
-    Enumeration names;
-
-    names = macros.keys();
-    
-    while ( names.hasMoreElements() ) {
-      String name = (String) names.nextElement();
+    for (String name : macros.keySet()) {
       if ( isUsed(name) )
         macros.put(name, expandMacro(name, getDefinition(name))); 
       // this put doesn't get a new key, so only a new value
-      // is set for the key "name" (without changing the enumeration 
-      // "names"!)
+      // is set for the key "name"
     }
   }
 

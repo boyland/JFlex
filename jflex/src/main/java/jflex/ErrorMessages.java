@@ -3,22 +3,11 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software); you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY); without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program); if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package JFlex;
+package jflex;
 
 import java.text.MessageFormat;
 import java.util.MissingResourceException;
@@ -47,7 +36,7 @@ public class ErrorMessages {
 
   public static String get(ErrorMessages msg) {
     if (resourceBundle == null) {
-      resourceBundle = ResourceBundle.getBundle("JFlex.Messages"); 
+      resourceBundle = ResourceBundle.getBundle("jflex.Messages"); 
     }    
     try {
       return resourceBundle.getString(msg.key);
@@ -67,7 +56,7 @@ public class ErrorMessages {
   }
 
   public static String get(ErrorMessages msg, int data) {
-    Object [] args = { new Integer(data) };
+    Object [] args = { data };
     return MessageFormat.format(get(msg),args);
   }
 
@@ -146,4 +135,6 @@ public class ErrorMessages {
   public static ErrorMessages CTOR_ARG = new ErrorMessages("CTOR_ARG");
   public static ErrorMessages CTOR_DEBUG = new ErrorMessages("CTOR_DEBUG");
   public static ErrorMessages INT_AND_TYPE = new ErrorMessages("INT_AND_TYPE");
+  public static ErrorMessages UNSUPPORTED_UNICODE_VERSION = new ErrorMessages("UNSUPPORTED_UNICODE_VERSION");
+  public static ErrorMessages INVALID_UNICODE_PROPERTY = new ErrorMessages("INVALID_UNICODE_PROPERTY");
 }

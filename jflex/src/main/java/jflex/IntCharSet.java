@@ -3,28 +3,18 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software; you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program; if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package JFlex;
+package jflex;
 
 import java.util.*;
+import jflex.unicode.UnicodeProperties;
 
 
 /** 
- * CharSet implemented with intervalls
+ * CharSet implemented with intervals
  *
  * [fixme: optimizations possible]
  *
@@ -36,52 +26,50 @@ public final class IntCharSet {
   private final static boolean DEBUG = false;
 
   /* invariant: all intervals are disjoint, ordered */
-  private Vector intervalls;  
-  private int pos; 
+  private List<Interval> intervals;
+  private int pos;
 
   public IntCharSet() {
-    this.intervalls = new Vector();
+    this.intervals = new ArrayList<Interval>();
   }
 
   public IntCharSet(char c) {
     this(new Interval(c,c));
   }
 
-  public IntCharSet(Interval intervall) {
+  public IntCharSet(Interval interval) {
     this();
-    intervalls.addElement(intervall);
+    intervals.add(interval);
   }
 
-  public IntCharSet(Vector /* Interval */ chars) {
+  public IntCharSet(List<Interval> chars) {
     int size = chars.size();
+    intervals = new ArrayList<Interval>(size);
 
-    this.intervalls = new Vector(size);
-    
-    for (int i = 0; i < size; i++) 
-      add( (Interval) chars.elementAt(i) );    
+    for (Interval interval : chars)
+      add(interval);
   }
-
   
   
 
   /**
-   * returns the index of the intervall that contains
+   * returns the index of the interval that contains
    * the character c, -1 if there is no such intevall
    *
    * @prec: true
-   * @post: -1 <= return < intervalls.size() && 
-   *        (return > -1 --> intervalls[return].contains(c))
+   * @post: -1 <= return < intervals.size() && 
+   *        (return > -1 --> intervals[return].contains(c))
    * 
    * @param c  the character
    * @return the index of the enclosing interval, -1 if no such interval  
    */
   private int indexOf(char c) {
     int start = 0;
-    int end   = intervalls.size()-1;
+    int end   = intervals.size()-1;
 
     while (start <= end) {
       int check = (start+end) / 2;
-      Interval i = (Interval) intervalls.elementAt(check);
+      Interval i = intervals.get(check);
       
       if (start == end) 
         return i.contains(c) ? start : -1;      
@@ -103,56 +91,58 @@ public final class IntCharSet {
   } 
 
   public IntCharSet add(IntCharSet set) {
-    for (int i = 0; i < set.intervalls.size(); i++) 
-      add( (Interval) set.intervalls.elementAt(i) );    
+    for (Interval interval : set.intervals) 
+      add(interval);
     return this;
   }
 
-  public void add(Interval intervall) {
+  public void add(Interval interval) {
     
-    int size = intervalls.size();
+    int size = intervals.size();
 
     for (int i = 0; i < size; i++) {
-      Interval elem = (Interval) intervalls.elementAt(i);
+      Interval elem = intervals.get(i);
 
-      if ( elem.end+1 < intervall.start ) continue;
+      if ( elem.end+1 < interval.start ) continue;
       
-      if ( elem.contains(intervall) ) return;      
+      if ( elem.contains(interval) ) return;      
 
-      if ( elem.start > intervall.end+1 ) {
-        intervalls.insertElementAt(new Interval(intervall), i);
+      if ( elem.start > interval.end+1 ) {
+        intervals.add(i, new Interval(interval));
         return;
       }
       
-      if (intervall.start < elem.start)
-        elem.start = intervall.start;
+      if (interval.start < elem.start)
+        elem.start = interval.start;
       
-      if (intervall.end <= elem.end) 
+      if (interval.end <= elem.end) 
         return;
         
-      elem.end = intervall.end;
+      elem.end = interval.end;
         
       i++;      
-      // delete all x with x.contains( intervall.end )
+      // delete all x with x.contains( interval.end )
       while (i < size) {
-        Interval x = (Interval) intervalls.elementAt(i);
+        Interval x = intervals.get(i);
         if (x.start > elem.end+1) return;
         
-        elem.end = x.end;
-        intervalls.removeElementAt(i);
+        if (x.end > elem.end) {
+          elem.end = x.end;
+        }
+        intervals.remove(i);
         size--;
       }
       return;      
     }
 
-    intervalls.addElement(new Interval(intervall));
+    intervals.add(new Interval(interval));
   }
 
   public void add(char c) {
-    int size = intervalls.size();
+    int size = intervals.size();
 
     for (int i = 0; i < size; i++) {
-      Interval elem = (Interval) intervalls.elementAt(i);
+      Interval elem = intervals.get(i);
       if (elem.end+1 < c) continue;
 
       if (elem.contains(c)) return; // already there, nothing to do
@@ -160,7 +150,7 @@ public final class IntCharSet {
       // assert(elem.end+1 >= c && (elem.start > c || elem.end < c));
       
       if (elem.start > c+1) {
-        intervalls.insertElementAt(new Interval(c,c), i);
+        intervals.add(i, new Interval(c,c));
         return;                 
       }
 
@@ -176,16 +166,16 @@ public final class IntCharSet {
 
       // merge with next interval if it contains c
       if (i+1 >= size) return;
-      Interval x = (Interval) intervalls.elementAt(i+1);
+      Interval x = intervals.get(i+1);
       if (x.start <= c+1) {
         elem.end = x.end;
-        intervalls.removeElementAt(i+1);
+        intervals.remove(i+1);
       }
       return;
     }
     
     // end reached but nothing found -> append at end
-    intervalls.addElement(new Interval(c,c));
+    intervals.add(new Interval(c,c));
   } 
 
  
@@ -199,14 +189,8 @@ public final class IntCharSet {
    */
   public boolean equals(Object o) {
     IntCharSet set = (IntCharSet) o;
-    if ( intervalls.size() != set.intervalls.size() ) return false;
-
-    for (int i = 0; i < intervalls.size(); i++) {
-      if ( !intervalls.elementAt(i).equals( set.intervalls.elementAt(i)) ) 
-        return false;
-    }
-
-    return true;
+    
+    return intervals.equals(set.intervals);
   }
 
   private char min(char a, char b) {
@@ -227,15 +211,15 @@ public final class IntCharSet {
 
     IntCharSet result = new IntCharSet();
 
-    int i = 0;  // index in this.intervalls
-    int j = 0;  // index in set.intervalls
+    int i = 0;  // index in this.intervals
+    int j = 0;  // index in set.intervals
 
-    int size = intervalls.size();
-    int setSize = set.intervalls.size();
+    int size = intervals.size();
+    int setSize = set.intervals.size();
 
     while (i < size && j < setSize) {
-      Interval x = (Interval) this.intervalls.elementAt(i);
-      Interval y = (Interval) set.intervalls.elementAt(j);
+      Interval x = this.intervals.get(i);
+      Interval y = set.intervals.get(j);
 
       if (x.end < y.start) {
         i++;
@@ -247,7 +231,7 @@ public final class IntCharSet {
         continue;
       }
 
-      result.intervalls.addElement(
+      result.intervals.add(
         new Interval(
           max(x.start, y.start), 
           min(x.end, y.end)
@@ -274,14 +258,14 @@ public final class IntCharSet {
       Out.dump("other : "+set);
     }
 
-    int i = 0;  // index in this.intervalls
-    int j = 0;  // index in set.intervalls
+    int i = 0;  // index in this.intervals
+    int j = 0;  // index in set.intervals
 
-    int setSize = set.intervalls.size();
+    int setSize = set.intervals.size();
 
-    while (i < intervalls.size() && j < setSize) {
-      Interval x = (Interval) this.intervalls.elementAt(i);
-      Interval y = (Interval) set.intervalls.elementAt(j);
+    while (i < intervals.size() && j < setSize) {
+      Interval x = this.intervals.get(i);
+      Interval y = set.intervals.get(j);
 
       if (DEBUG) {
         Out.dump("this      : "+this);
@@ -303,7 +287,7 @@ public final class IntCharSet {
       // x.end <= y.end && x.start >= y.start (prec)
       
       if ( x.start == y.start && x.end == y.end ) {
-        intervalls.removeElementAt(i);
+        intervals.remove(i);
         j++;
         continue;
       }
@@ -325,7 +309,7 @@ public final class IntCharSet {
         continue;
       }
 
-      intervalls.insertElementAt(new Interval(x.start, (char) (y.start-1)), i);
+      intervals.add(i, new Interval(x.start, (char) (y.start-1)));
       x.start = (char) (y.end+1);
 
       i++;
@@ -338,17 +322,21 @@ public final class IntCharSet {
   }
 
   public boolean containsElements() {
-    return intervalls.size() > 0;
+    return intervals.size() > 0;
   }
 
-  public int numIntervalls() {
-    return intervalls.size();
+  public int numIntervals() {
+    return intervals.size();
+  }
+
+  public List<Interval> getIntervals() {
+    return intervals;
   }
 
   // beware: depends on caller protocol, single user only 
   public Interval getNext() {
-    if (pos == intervalls.size()) pos = 0;
-    return (Interval) intervalls.elementAt(pos++);
+    if (pos == intervals.size()) pos = 0;
+    return intervals.get(pos++);
   }
 
   /**
@@ -358,22 +346,23 @@ public final class IntCharSet {
    * and additionally all lower/upper/title case variants of the 
    * characters in this set.
    * 
+   * @param unicodeProperties The Unicode Properties to use when generating
+   *  caseless equivalence classes.
    * @return a caseless copy of this set
    */
-  public IntCharSet getCaseless() {
+  public IntCharSet getCaseless(UnicodeProperties unicodeProperties) {
     IntCharSet n = copy();
         
-    int size = intervalls.size();
+    int size = intervals.size();
     for (int i=0; i < size; i++) {
-      Interval elem = (Interval) intervalls.elementAt(i);
+      Interval elem = intervals.get(i);
       for (char c = elem.start; c <= elem.end; c++) {
-        n.add(Character.toLowerCase(c)); 
-        n.add(Character.toUpperCase(c)); 
-        n.add(Character.toTitleCase(c)); 
+        IntCharSet equivalenceClass = unicodeProperties.getCaselessMatches(c);
+        if (null != equivalenceClass)
+          n.add(equivalenceClass);
       }
     }
-    
-    return n;    
+    return n;
   }
 
 
@@ -383,10 +372,10 @@ public final class IntCharSet {
    * @return a string representing this char set.
    */
   public String toString() {
-    StringBuffer result = new StringBuffer("{ ");
+    StringBuilder result = new StringBuilder("{ ");
 
-    for (int i = 0; i < intervalls.size(); i++)
-      result.append( intervalls.elementAt(i) );
+    for (Interval interval : intervals) 
+      result.append(interval);
 
     result.append(" }");
 
@@ -401,11 +390,8 @@ public final class IntCharSet {
    */
   public IntCharSet copy() {
     IntCharSet result = new IntCharSet();
-    int size = intervalls.size();
-    for (int i=0; i < size; i++) {
-      Interval iv = ((Interval) intervalls.elementAt(i)).copy();
-      result.intervalls.addElement(iv);
-    }
+    for (Interval interval : intervals)
+      result.intervals.add(interval.copy());
     return result;
   }
 }

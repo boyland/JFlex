@@ -3,22 +3,11 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software; you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program; if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package JFlex;
+package jflex;
 
 import java.io.*;
 import java.util.*;
@@ -70,7 +59,7 @@ final public class Emitter {
   
 
   /** maps actions to their switch label */
-  private Hashtable actionTable = new Hashtable();
+  private Map<Action, Integer> actionTable = new HashMap<Action, Integer>();
 
   private CharClassInterval [] intervals;
 
@@ -96,6 +85,7 @@ final public class Emitter {
   /**
    * Computes base name of the class name. Needs to take into account generics.
    *
+   * @param className Class name for which to construct the base name
    * @see LexScan#className
    * @return the
    */
@@ -115,9 +105,9 @@ final public class Emitter {
    * another file. Makes a backup if the file already exists.
    *
    * @param name  the name (without path) of the file
-   * @param path  the path where to construct the file
    * @param input fall back location if path = <tt>null</tt>
    *              (expected to be a file in the directory to write to)   
+   * @return The constructed File
    */
   public static File normalize(String name, File input) {
     File outputFile;
@@ -290,7 +280,7 @@ final public class Emitter {
       
       println(" {");
 
-      println("    java_cup.runtime.Symbol s = "+scanner.functionName+"();");
+      println("    "+scanner.tokenType+" s = "+scanner.functionName+"();");
       print("    System.out.println( ");
       if (scanner.lineCount) print("\"line:\" + (yyline+1) + ");
       if (scanner.columnCount) print("\" col:\" + (yycolumn+1) + ");
@@ -328,14 +318,27 @@ final public class Emitter {
     
     println("  public static void main(String argv[]) {");
     println("    if (argv.length == 0) {");
-    println("      System.out.println(\"Usage : java "+className+" <inputfile>\");");
+    println("      System.out.println(\"Usage : java "+className+" [ --encoding <name> ] <inputfile(s)>\");");
     println("    }");
     println("    else {");
-    println("      for (int i = 0; i < argv.length; i++) {");
+    println("      int firstFilePos = 0;");
+    println("      String encodingName = \"UTF-8\";");
+    println("      if (argv[0].equals(\"--encoding\")) {");
+    println("        firstFilePos = 2;");
+    println("        encodingName = argv[1];");
+    println("        try {");
+    println("          java.nio.charset.Charset.forName(encodingName); // Side-effect: is encodingName valid? ");
+    println("        } catch (Exception e) {");
+    println("          System.out.println(\"Invalid encoding '\" + encodingName + \"'\");");
+    println("          return;");
+    println("        }");
+    println("      }");
+    println("      for (int i = firstFilePos; i < argv.length; i++) {");
     println("        "+className+" scanner = null;");
     println("        try {");
-    println("          scanner = new "+className+"( new java.io.FileReader(argv[i]) );");
-
+    println("          java.io.FileInputStream stream = new java.io.FileInputStream(argv[i]);");
+    println("          java.io.Reader reader = new java.io.InputStreamReader(stream, encodingName);");
+    println("          scanner = new "+className+"(reader);");
     if ( scanner.standalone ) {      
       println("          while ( !scanner.zzAtEOF ) scanner."+scanner.functionName+"();");
     }
@@ -471,10 +474,10 @@ final public class Emitter {
   /**
    * Try to find out if user code ends with a javadoc comment 
    * 
-   * @param buffer   the user code
-   * @return true    if it ends with a javadoc comment
+   * @param usercode  the user code
+   * @return true     if it ends with a javadoc comment
    */
-  public static boolean endsWithJavadoc(StringBuffer usercode) {
+  public static boolean endsWithJavadoc(StringBuilder usercode) {
     String s = usercode.toString().trim();
         
     if (!s.endsWith("*/")) return false;
@@ -489,12 +492,8 @@ final public class Emitter {
 
 
   private void emitLexicalStates() {
-    Enumeration stateNames = scanner.states.names();
-    
-    while ( stateNames.hasMoreElements() ) {
-      String name = (String) stateNames.nextElement();
-      
-      int num = scanner.states.getNumber(name).intValue();
+    for (String name : scanner.states.names()) {
+      int num = scanner.states.getNumber(name);
 
       // println("  "+visibility+" static final int "+name+" = "+2*num+";");
       println("  "+Options.lang.field(visibility.equals("public"), true, false, Options.lang.int_type(), name, ""+(2*num)) + ";");
@@ -640,7 +639,7 @@ final public class Emitter {
   }
   
   private void emitCharMapArrayUnPacked() {
-  
+   
     CharClasses cl = parser.getCharClasses();
     
     println("");
@@ -669,7 +668,7 @@ final public class Emitter {
         }
       }
     }
-    
+
     println();
     println("  "+ Options.lang.array_literal_stop()+";");
     println();
@@ -900,13 +899,13 @@ final public class Emitter {
 
   private void emitCtorActuals() {
     for (int i=0; i < scanner.ctorArgs.size(); i++) {
-      print(", "+scanner.ctorArgs.elementAt(i));
+      print(", "+scanner.ctorArgs.get(i));
     }
   }
 
   private void emitCtorArgs() {
     for (int i = 0; i < scanner.ctorArgs.size(); i++) {
-      print(", "+Options.lang.formal(false, scanner.ctorTypes.elementAt(i).toString(),scanner.ctorArgs.elementAt(i).toString()));
+      print(", "+Options.lang.formal(false, scanner.ctorTypes.get(i).toString(),scanner.ctorArgs.get(i).toString()));
     }    
   }
   
@@ -1090,6 +1089,16 @@ final public class Emitter {
       println();
     }
 
+    if (scanner.useRowMap) {
+      println("      // set up zzAction for empty match case:");
+      // TODO: use +Options.lang.local for declaration
+      println("      int zzAttributes = zzAttrL[zzState];");
+      println("      if ( (zzAttributes & 1) == 1 ) {");
+      println("        zzAction = zzState;");
+      println("      }");
+      println();
+    }
+  
     skel.emitNext();
   }
 
@@ -1103,7 +1112,7 @@ final public class Emitter {
     println("          zzState = zzNext;");
     println();
 
-    println("          "+Options.lang.local(false, Options.lang.int_type(), "zzAttributes", Options.lang.array_index("zzAttrL","zzState"))+";");
+    println("          zzAttributes = zzAttrL[zzState];");
 
     println("          if ( (zzAttributes & "+FINAL+") == "+FINAL+" ) {");
 
@@ -1148,9 +1157,12 @@ final public class Emitter {
 
   /**
    * Escapes all " ' \ tabs and newlines
+   * 
+   * @param s The string to escape
+   * @return The escaped string
    */
   private String escapify(String s) {
-    StringBuffer result = new StringBuffer(s.length()*2);
+    StringBuilder result = new StringBuilder(s.length()*2);
     
     for (int i = 0; i < s.length(); i++) {
       char c = s.charAt(i);
@@ -1185,12 +1197,12 @@ final public class Emitter {
       if ( dfa.isFinal[i] ) {
         Action action = dfa.action[i];
         if (action.isEmittable()) {
-          Integer stored = (Integer) actionTable.get(action);
+          Integer stored = actionTable.get(action);
           if ( stored == null ) { 
-            stored = new Integer(lastAction++);
+            stored = lastAction++;
             actionTable.put(action, stored);
           }
-          newVal = stored.intValue();
+          newVal = stored;
         }
       }
       
@@ -1213,11 +1225,11 @@ final public class Emitter {
   private void emitActions() {
     println("      "+Options.lang.switch_header(Options.lang.conditional("zzAction < 0","zzAction",Options.lang.array_index("ZZ_ACTION","zzAction")))+" {");
 
-    int i = actionTable.size()+1;  
-    Enumeration actions = actionTable.keys();
-    while ( actions.hasMoreElements() ) {
-      Action action = (Action) actions.nextElement();
-      int label = ((Integer) actionTable.get(action)).intValue();
+    int i = actionTable.size()+1;
+    
+    for (Map.Entry<Action,Integer> entry : actionTable.entrySet()) {
+      Action action = entry.getKey();
+      int label = entry.getValue();
 
       println("        "+Options.lang.start_case(""+label)+Options.lang.start_case_body()); 
       
@@ -1290,18 +1302,12 @@ final public class Emitter {
     if ( eofActions.numActions() > 0 ) {
       println("            "+Options.lang.switch_header("zzLexicalState")+" {");
       
-      Enumeration stateNames = scanner.states.names();
-
-      // record lex states already emitted:
-      Hashtable used = new Hashtable();
-
       // pick a start value for break case labels. 
       // must be larger than any value of a lex state:
       int last = dfa.numStates;
       
-      while ( stateNames.hasMoreElements() ) {
-        String name = (String) stateNames.nextElement();
-        int num = scanner.states.getNumber(name).intValue();
+      for (String name : scanner.states.names()) {
+        int num = scanner.states.getNumber(name);
         Action action = eofActions.getAction(num);
 
         if (action != null) {
@@ -1631,7 +1637,7 @@ final public class Emitter {
     
     if (scanner.useRowMap) 
       emitAttributes();    
-    
+
     skel.emitNext();
     
     emitLookBuffer();

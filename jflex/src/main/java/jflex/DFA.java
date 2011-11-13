@@ -3,22 +3,11 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software; you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program; if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package JFlex;
+package jflex;
 
 
 import java.io.*;
@@ -76,6 +65,7 @@ final public class DFA {
    */
   int numStates;
 
+
   /**
    * The current maximum number of input characters
    */
@@ -89,7 +79,7 @@ final public class DFA {
   /**
    * all actions that are used in this DFA
    */
-  Hashtable usedActions = new Hashtable();
+  Map<Action, Action> usedActions = new HashMap<Action, Action>();
 
   /** True iff this DFA contains general lookahead */
   boolean lookaheadUsed;
@@ -172,8 +162,9 @@ final public class DFA {
   }
 
 
+
   public String toString() {
-    StringBuffer result = new StringBuffer();
+    StringBuilder result = new StringBuilder();
 
     for (int i=0; i < numStates; i++) {
       result.append("State ");
@@ -189,8 +180,8 @@ final public class DFA {
       result.append(i+":"+Out.NL);
      
       for (char j=0; j < numInput; j++) {
-	      if ( table[i][j] >= 0 ) 
-	        result.append("  with "+(int)j+" in "+table[i][j]+Out.NL);	
+	      if ( table[i][j] >= 0 )
+          result.append("  with ").append((int) j).append(" in ").append(table[i][j]).append(Out.NL);	
       }
     }
     
@@ -212,10 +203,10 @@ final public class DFA {
 
 
   public String dotFormat() {
-    StringBuffer result = new StringBuffer();
+    StringBuilder result = new StringBuilder();
 
-    result.append("digraph DFA {"+Out.NL);
-    result.append("rankdir = LR"+Out.NL);
+    result.append("digraph DFA {").append(Out.NL);
+    result.append("rankdir = LR").append(Out.NL);
 
     for (int i=0; i < numStates; i++) {
       if ( isFinal[i] ) {
@@ -228,14 +219,14 @@ final public class DFA {
     for (int i=0; i < numStates; i++) {
       for (int input = 0; input < numInput; input++) {
 	      if ( table[i][input] >= 0 ) {
-          result.append(i+" -> "+table[i][input]);
-          result.append(" [label=\"["+input+"]\"]"+Out.NL);
-          //          result.append(" [label=\"["+classes.toString(input)+"]\"]\n");
+          result.append(i).append(" -> ").append(table[i][input]);
+          result.append(" [label=\"[").append(input).append("]\"]").append(Out.NL);
+          // result.append(" [label=\"[").append(classes.toString(input)).append("]\"]\n");
         }
       }
     }
 
-    result.append("}"+Out.NL);
+    result.append("}").append(Out.NL);
 
     return result.toString();
   }
@@ -246,14 +237,10 @@ final public class DFA {
    */ 
   public void checkActions(LexScan scanner, LexParse parser) {
     EOFActions eofActions = parser.getEOFActions();
-    Enumeration l = scanner.actions.elements();
-
-    while (l.hasMoreElements()) {
-      Action a = (Action) l.nextElement();
-      if ( !a.equals(usedActions.get(a)) && !eofActions.isEOFAction(a) ) {
+    
+    for (Action a : scanner.actions)
+      if ( !a.equals(usedActions.get(a)) && !eofActions.isEOFAction(a) ) 
         Out.warning(scanner.file, ErrorMessages.NEVER_MATCH, a.priority-1, -1);
-      }
-    }
   }
 
 

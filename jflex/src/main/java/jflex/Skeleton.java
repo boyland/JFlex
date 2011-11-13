@@ -3,25 +3,15 @@
  * Copyright (C) 1998-2009  Gerwin Klein <lsf@jflex.de>                    *
  * All rights reserved.                                                    *
  *                                                                         *
- * This program is free software; you can redistribute it and/or modify    *
- * it under the terms of the GNU General Public License. See the file      *
- * COPYRIGHT for more information.                                         *
- *                                                                         *
- * This program is distributed in the hope that it will be useful,         *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- * GNU General Public License for more details.                            *
- *                                                                         *
- * You should have received a copy of the GNU General Public License along *
- * with this program; if not, write to the Free Software Foundation, Inc., *
- * 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA                 *
+ * License: BSD                                                            *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-package JFlex;
+package jflex;
 
 import java.io.*;
 import java.net.URL;
-import java.util.Vector;
+import java.util.List;
+import java.util.ArrayList;
 
 
 /**
@@ -35,7 +25,7 @@ import java.util.Vector;
  * part to this class. The iterator part is used to emit consecutive skeleton
  * sections to some <code>PrintWriter</code>. 
  *
- * @see JFlex.Emitter
+ * @see jflex.Emitter
  *
  * @author Gerwin Klein
  * @version JFlex 1.5, $Revision$, $Date$
@@ -43,7 +33,7 @@ import java.util.Vector;
 public class Skeleton {
   
   /** location of default skeleton */
-  static final private String DEFAULT_LOC = "skeleton.default"; //$NON-NLS-1$
+  static final private String DEFAULT_LOC = "jflex/skeleton.default"; //$NON-NLS-1$
   
   /** expected number of sections in the skeleton file */
   static final private int size = 21;
@@ -135,13 +125,13 @@ public class Skeleton {
    * @throws GeneratorException if the number of skeleton sections does not match 
    */
   public static void readSkel(BufferedReader reader) throws IOException {
-    Vector lines = new Vector();
-    StringBuffer section = new StringBuffer();
+    List<String> lines = new ArrayList<String>();
+    StringBuilder section = new StringBuilder();
 
     String ln;
     while ((ln = reader.readLine()) != null) {
       if (ln.startsWith("---")) { //$NON-NLS-1$
-        lines.addElement(section.toString());
+        lines.add(section.toString());
         section.setLength(0);
       } else {
         section.append(ln);
@@ -150,7 +140,7 @@ public class Skeleton {
     }
 
     if (section.length() > 0)
-      lines.addElement(section.toString());
+      lines.add(section.toString());
 
     if (lines.size() != size) {
       Out.error(ErrorMessages.WRONG_SKELETON);
@@ -159,7 +149,7 @@ public class Skeleton {
 
     line = new String[size];
     for (int i = 0; i < size; i++)
-      line[i] = (String) lines.elementAt(i);
+      line[i] = lines.get(i);
   }
   
   /**
@@ -171,7 +161,7 @@ public class Skeleton {
    * @return a String object with a replaced by b in c 
    */
   public static String replace(String a, String b, String c) {
-    StringBuffer result = new StringBuffer(c.length());
+    StringBuilder result = new StringBuilder(c.length());
     int i = 0;
     int j = c.indexOf(a);
     
