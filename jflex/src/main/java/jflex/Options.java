@@ -53,7 +53,7 @@ public class Options {
   /** If true, you will be flooded with information (e.g. dfa tables).  */
   public static boolean dump;
   /** Output language (currently Java or Scala) */
-  public static Language lang;
+  public static Language lang = Language.JAVA;
 
 	static { setDefaults();	}
 
