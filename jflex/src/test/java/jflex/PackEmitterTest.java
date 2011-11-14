@@ -31,7 +31,7 @@ public class PackEmitterTest extends TestCase {
 
   public void setUp() {
     p = new PackEmitter("Bla") {
-          public void emitUnpack() { }
+          public void emitUnpackImplem() { }
     };
   }
 

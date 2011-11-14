@@ -136,7 +136,15 @@ public abstract class PackEmitter {
   /**
    * Emit the unpacking code. 
    */
-  public abstract void emitUnpack();
+  public void emitUnpack() {
+    emitUnpackImplem();
+    emitUnpackCall();
+  }
+
+  /**
+   * Emit the unpacking code's implementation
+   */
+  public abstract void emitUnpackImplem();
 
   /**
    * Emit the call to the unpacking code

@@ -35,9 +35,9 @@ public class CountEmitter extends PackEmitter {
   /**
    * Emits count/value unpacking code for the generated array. 
    * 
-   * @see jflex.PackEmitter#emitUnpack()
+   * @see jflex.PackEmitter#emitUnpackImplem()
    */
-  public void emitUnpack() {
+  public void emitUnpackImplem() {
     // close last string chunk:
     println("\";");
     
@@ -71,7 +71,6 @@ public class CountEmitter extends PackEmitter {
     println("    }");
     println("    return j;");
     println("  }");
-    emitUnpackCall();
   }
 
   /**

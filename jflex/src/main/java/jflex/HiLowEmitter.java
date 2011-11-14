@@ -32,9 +32,9 @@ public class HiLowEmitter extends PackEmitter {
   /**
    * Emits hi/low pair unpacking code for the generated array. 
    * 
-   * @see jflex.PackEmitter#emitUnpack()
+   * @see jflex.PackEmitter#emitUnpackImplem()
    */
-  public void emitUnpack() {
+  public void emitUnpackImplem() {
     // close last string chunk:
     println("\";");
     nl();
@@ -63,7 +63,6 @@ public class HiLowEmitter extends PackEmitter {
     println("    }");
     println("    return j;");
     println("  }");
-    emitUnpackCall();
   }
 
   /**
