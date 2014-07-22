@@ -1363,8 +1363,10 @@ final public class Emitter {
     else
       println("            return null;");
 
-    if (eofActions.numActions() > 0)
+    if (eofActions.numActions() > 0) {
       println("              " + Options.lang.end_case_body());
+      println("            }");
+    }
   }
   
   private void emitState(int state) {
