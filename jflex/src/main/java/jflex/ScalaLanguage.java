@@ -145,6 +145,10 @@ public class ScalaLanguage implements Language {
     return "}";
   }
 
+  public String end_case_body_unsafe() {
+    return "}";
+  }
+
   public String start_label_block(String name) {
     return "/*" + name + ":*/ try {";
   }

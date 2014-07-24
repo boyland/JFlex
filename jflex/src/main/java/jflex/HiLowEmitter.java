@@ -58,7 +58,7 @@ public class HiLowEmitter extends PackEmitter {
     println("    "+Options.lang.local(true, Options.lang.int_type(), "j", "offset")+";  /* index in unpacked array */");
     println("    "+Options.lang.local(false, Options.lang.int_type(), "l", "packed.length()")+";");
     println("    while (i < l) {");
-    println("      "+Options.lang.local(false, Options.lang.int_type(), "high", "packed.charAt(i) << 16")+"; i+= 1");
+    println("      "+Options.lang.local(false, Options.lang.int_type(), "high", "packed.charAt(i) << 16")+"; i+= 1;");
     println("      "+Options.lang.array_index("result", "j")+" = high | packed.charAt(i); i+= 1; j += 1;");
     println("    }");
     println("    return j;");

@@ -179,10 +179,10 @@ final public class Emitter {
     
     println("  /** For the backwards DFA of general lookahead statements */");
     // println("  private boolean [] zzFin = new boolean [ZZ_BUFFERSIZE+1];");
-    println("  " + Options.lang.field(false, false, false, 
+    println("  " + Options.lang.field(false, false, true, 
         Options.lang.array_type(Options.lang.boolean_type()), 
         "zzFin", Options.lang.new_array(Options.lang.boolean_type(),
-            "ZZ_BUFFERSIZE+1")));
+            "ZZ_BUFFERSIZE+1"))+";");
     println();
   }
   
@@ -588,14 +588,14 @@ final public class Emitter {
         "("+Options.lang.formal(false, "String", "packed") + ")", null) + "{");
     // println("    char [] map = new char[0x10000];");
     println("    " + Options.lang.local(false, Options.lang.array_type(Options.lang.char_type()), "map", 
-        Options.lang.new_array(Options.lang.char_type(), "0x10000")));
+        Options.lang.new_array(Options.lang.char_type(), "0x10000"))+";");
     println("    "+Options.lang.local(true, Options.lang.int_type(), "i", "0")+";  /* index in packed string  */");
     println("    "+Options.lang.local(true, Options.lang.int_type(), "j", "0")+";  /* index in unpacked array */");
     println("    while (i < "+2*intervals.length+") {");
-    println("      "+Options.lang.local(true, Options.lang.int_type(), "count", "packed.charAt(i)")+"; i+= 1");
-    println("      "+Options.lang.local(true, Options.lang.char_type(), "value", "packed.charAt(i);")+" i+= 1");
-    //println("      int  count = packed.charAt(i); i+=1");
-    //println("      char value = packed.charAt(i); i+=1");
+    println("      "+Options.lang.local(true, Options.lang.int_type(), "count", "packed.charAt(i)")+"; i+= 1;");
+    println("      "+Options.lang.local(true, Options.lang.char_type(), "value", "packed.charAt(i);")+" i+= 1;");
+    //println("      int  count = packed.charAt(i); i+=1;");
+    //println("      char value = packed.charAt(i); i+=1;");
     println("      do { "+Options.lang.array_index("map","j")+" = value; j+=1; count-=1; } while (count > 0);");
     println("    }");
     println("    return map;");
@@ -1288,7 +1288,7 @@ final public class Emitter {
       
       println("          { "+action.content);
       println("          }");
-      println("          " + Options.lang.end_case_body());
+      println("          " + Options.lang.end_case_body_unsafe());
       println("        "+Options.lang.start_case("" + (i++))+Options.lang.start_case_body()+Options.lang.end_case_body()); 
     }
   }

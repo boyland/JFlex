@@ -180,6 +180,10 @@ public class JavaLanguage implements Language {
     return "break;";
   }
 
+  public String end_case_body_unsafe() {
+    return "// fall through";
+  }
+
   public String start_label_block(String name) {
     return name + ": {";
   }

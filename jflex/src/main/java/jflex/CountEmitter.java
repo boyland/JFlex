@@ -62,10 +62,10 @@ public class CountEmitter extends PackEmitter {
     println("    "+Options.lang.local(true, Options.lang.int_type(), "j", "offset")+";  /* index in unpacked array */");
     println("    "+Options.lang.local(false, Options.lang.int_type(), "l", "packed.length()")+";");
     println("    while (i < l) {");
-    println("      "+Options.lang.local(true, Options.lang.int_type(), "count", "packed.charAt(i)")+"; i+= 1");
-    println("      "+Options.lang.local(true, Options.lang.int_type(), "value", "packed.charAt(i);")+" i+= 1");
+    println("      "+Options.lang.local(true, Options.lang.int_type(), "count", "packed.charAt(i)")+"; i+= 1;");
+    println("      "+Options.lang.local(true, Options.lang.int_type(), "value", "packed.charAt(i);")+" i+= 1;");
     if (translate != 0) {
-      println("      value-= "+translate);
+      println("      value-= "+translate + ";");
     }
     println("      do { "+Options.lang.array_index("result", "j")+" = value; j+=1; count -= 1; } while (count > 0);");
     println("    }");

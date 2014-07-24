@@ -62,6 +62,7 @@ public interface Language {
   String add_case(String val);
   String start_case_body();
   String end_case_body();
+  String end_case_body_unsafe(); // end a case body without a break, fall through will break
   String gen_default();
   
   // Exiting loops;
