@@ -1,0 +1,7 @@
+jflex-1.5 + Scala
+
+Installation instructions (terse)
+mvn package
+mv jflex/target/jflex-1.5.0-SNAPSHOT.jar jflex/lib/JFlex.jar
+
+For help, send email to boyland@uwm.edu
