@@ -2,6 +2,8 @@ jflex-1.5 + Scala
 
 Installation instructions (terse)
 mvn package
+	ignore error about wanting JDK 1.5.0
+		(I  can't figure out where this dependency comes from)
 mv jflex/target/jflex-1.5.0-SNAPSHOT.jar jflex/lib/JFlex.jar
 
 For help, send email to boyland@uwm.edu

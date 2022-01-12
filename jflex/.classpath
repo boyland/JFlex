@@ -6,5 +6,7 @@
 	<classpathentry kind="src" path="src/test/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.maven.ide.eclipse.MAVEN2_CLASSPATH_CONTAINER/workspace"/>
+	<classpathentry kind="lib" path="/Applications/eclipse/plugins/org.apache.ant_1.8.3.v201301120609/lib/ant.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

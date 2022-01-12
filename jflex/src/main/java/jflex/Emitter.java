@@ -615,19 +615,21 @@ final public class Emitter {
         "ZZ_TRANS", Options.lang.array_literal_start(Options.lang.int_type())));
 
     print("    ");
+    
+    boolean started = false;
+    
     for (i = 0; i < dfa.numStates; i++) {
       
       if ( !rowKilled[i] ) {        
-        for (c = 0; c < dfa.numInput; c++) {          
+        for (c = 0; c < dfa.numInput; c++) {  
           if ( !colKilled[c] ) {            
+            if (started) print(", "); else started = true;
             if (n >= 10) {
               println();
               print("    ");
               n = 0;
             }
             print( dfa.table[i][c] );
-            if (i != dfa.numStates-1 || c != dfa.numInput-1)
-              print( ", ");
             n++;
           }
         }
