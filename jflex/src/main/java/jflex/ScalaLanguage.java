@@ -159,4 +159,29 @@ public class ScalaLanguage implements Language {
     return "} catch { case ZZbreak(\"" + name + "\") => () }";
   }
 
+  @Override
+  public String char_literal(char ch) {
+    // This is tricky:
+    // Scala up throught 2.11 converts unicode escapes to the
+    // character upon reading so that "\u0022" is not legal
+    // and similarly with the newline character.
+    // Scala 2.13 doesn't permit octal escapes (or even \0)
+    // so we have a bunch of special cases
+    if (ch >= 0x1000) {
+      return "\\u" + Integer.toHexString(ch);
+    } else if (ch >= 0x100) {
+      return "\\u0" + Integer.toHexString(ch);
+    } else if (ch >= 0x7f || (ch >= 16 && ch < ' ')){
+      return "\\u00" + Integer.toHexString(ch);
+    } else if (ch == '\n'){
+      return "\\n";
+    } else if (ch < 16) {
+      return "\\u000" + Integer.toHexString(ch);
+    } else if (ch == '\'' || ch == '"') {
+      return "\\" + ch;
+    } else {
+      return "" + ch;
+    }
+  }
+
 }

@@ -69,6 +69,9 @@ public interface Language {
   String start_label_block(String name);
   String break_block(String name);
   String end_label_block(String name);
+  
+  // Character literals
+  String char_literal(char ch); // e.g. "\\u2135" or "\\010" or ":"
 
   public static final Language JAVA = new JavaLanguage();
   public static final Language SCALA = new ScalaLanguage();

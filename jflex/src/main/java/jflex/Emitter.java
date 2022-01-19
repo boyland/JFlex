@@ -745,15 +745,7 @@ final public class Emitter {
    * @prec  0 <= c <= 0xFFFF 
    */
   private void printUC(int c) {
-    if (c > 255) {
-      out.print("\\u");
-      if (c < 0x1000) out.print("0");
-      out.print(Integer.toHexString(c));
-    }
-    else {
-      out.print("\\");
-      out.print(Integer.toOctalString(c));
-    }    
+    out.print(Options.lang.char_literal((char)c));
   }
 
 

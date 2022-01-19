@@ -118,7 +118,7 @@
       if (c == -1) {
         return true;
       } else {
-        zzBuffer(zzEndRead) = c toChar;
+        zzBuffer(zzEndRead) = c.toChar;
 	    zzEndRead += 1
         return false;
       }     

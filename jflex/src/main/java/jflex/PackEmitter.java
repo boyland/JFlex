@@ -186,15 +186,7 @@ public abstract class PackEmitter {
    * @param c the character to append
    */
   private void printUC(char c) {
-    if (c > 255) {
-      out.append("\\u");
-      if (c < 0x1000) out.append("0");
-      out.append(Integer.toHexString(c));
-    }
-    else {
-      out.append("\\");
-      out.append(Integer.toOctalString(c));
-    }
+    out.append(Options.lang.char_literal((char)c));
   } 
 
   /**

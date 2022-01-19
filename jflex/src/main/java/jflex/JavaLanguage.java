@@ -194,4 +194,15 @@ public class JavaLanguage implements Language {
     return "}";
   }
 
+  @Override
+  public String char_literal(char ch) {
+    if (ch >= 0x1000) {
+      return "\\u" + Integer.toHexString(ch);
+    } else if (ch >= 0x100) {
+      return "\\u0" + Integer.toHexString(ch);
+    } else {
+      return "\\" + Integer.toOctalString(ch);
+    }
+  }
+
 }
