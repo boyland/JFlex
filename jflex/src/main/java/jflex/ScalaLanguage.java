@@ -177,7 +177,7 @@ public class ScalaLanguage implements Language {
       return "\\n";
     } else if (ch < 16) {
       return "\\u000" + Integer.toHexString(ch);
-    } else if (ch == '\'' || ch == '"') {
+    } else if (ch == '\'' || ch == '"' || ch == '\\') {
       return "\\" + ch;
     } else {
       return "" + ch;
